@@ -3,38 +3,80 @@ const { Schema } = mongoose;
 const { ObjectId } = Schema.Types;
 
 const ExerciseSchema = new Schema({
-    userId: {
+    _id: {
         type: ObjectId,
+        required: true,
+        unique: true,
+    },
+    userId: {
+        type: String,
         ref: "User",
         required: true,
     },
-    date: {
+    dueDate: {
         type: Date,
+        required: true,
+    },
+    assignmentId: {
+        type: ObjectId,
         required: true,
     },
     questions: [
         {
             _id: {
                 type: ObjectId,
-                ref: "Question",
                 required: true,
             },
-            userAnswer: [
+            query: {
+                type: String,
+                required: true, // the prompt being asked
+            },
+            type: {
+                type: String,
+                enum: ["multiple-choice", "coding"],
+                required: true,
+            },
+            hints: [{ type: String }], // generated as the user needs, no more than 3
+            correctAnswer: {
+                type: String,
+                required: true, 
+            },
+            difficulty: {
+                type: String,
+                required: true,
+            },
+            otherAnswers: [{ type: String }],
+            explanation: {
+                type: String,
+                required: true,
+            },
+            userAnswers: [
                 {
-                    type: String,
+                    _id: {
+                        type: ObjectId,
+                        required: true,
+                    },
+                    timeStamp: {
+                        type: Date,
+                        required: true,
+                    },
+                    selectedAnswer: {
+                        type: String,
+                        required: true,
+                    },
                 },
             ],
-            userCorrect: {
-                type: Boolean,
-            },
             timeSpent: {
                 type: Number,
                 required: true,
             },
         },
     ],
-    topics: [{type: String, required: true}],
-    status: { type: String, required: true },
+    status: {
+        type: String,
+        required: true,
+        enum: ["Not Started", "In Progress", "Complete"],
+    },
     totalTimeSpent: { type: Number, required: true },
     totalCorrect: { type: Number, required: true },
 });

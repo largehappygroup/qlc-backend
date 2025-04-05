@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
-const { ObjectId } = Schema.Types;
 
 const UserSchema = new Schema({
     _id: {
-        type: ObjectId,
+        type: String, // vunetID
         required: true,
+        unique: true,
     },
     firstName: {
         type: String,
@@ -14,11 +14,6 @@ const UserSchema = new Schema({
     lastName: {
         type: String,
         required: true,
-    },
-    vuNetId: {
-        type: String,
-        required: true,
-        unique: true,
     },
     email: {
         type: String,
@@ -30,6 +25,14 @@ const UserSchema = new Schema({
         required: true,
         enum: ["admin", "faculty", "ta", "student"]
     },
+    term: {
+        type: String,
+        required: true
+    },
+    termYear: {
+        type: Number,
+        required: true
+    }
 });
 
 module.exports = User = mongoose.model("user", UserSchema);
