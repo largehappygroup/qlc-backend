@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const UserSchema = new Schema({
+const StudentSchema = new Schema({
     _id: {
         type: String, // vunetID
         required: true,
@@ -20,11 +20,6 @@ const UserSchema = new Schema({
         required: true,
         unique: true,
     },
-    role: {
-        type: String,
-        required: true,
-        enum: ["admin", "faculty", "ta", "student"]
-    },
     term: {
         type: String,
         required: true
@@ -32,7 +27,13 @@ const UserSchema = new Schema({
     termYear: {
         type: Number,
         required: true
+    },
+    classification: {
+        type: String,
+        required: true,
+        enum: ["Freshman", "Sophomore", "Junior", "Senior"]
     }
+
 });
 
-module.exports = User = mongoose.model("user", UserSchema);
+module.exports = Student = mongoose.model("student", StudentSchema);

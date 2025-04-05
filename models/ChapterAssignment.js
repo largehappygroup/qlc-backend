@@ -2,11 +2,11 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 const { ObjectId } = Schema.Types;
 
-const AssignmentSchema = new Schema({
-    userId: {
-        type: String,
-        required: true
-    },
+/**
+ * Details for the instructor to initialize
+ */
+
+const ChapterAssignmentSchema = new Schema({
     title: {
         type: String,
         required: true // (ex. MadLibs)
@@ -19,7 +19,6 @@ const AssignmentSchema = new Schema({
         type: String,
         required: true // (ex. PA05-W, stores W)
     },
-
     instructions: {
         type: String,
         required: true // basic instructions given to students
@@ -29,3 +28,5 @@ const AssignmentSchema = new Schema({
         required: true // when students submit their own code
     },
 });
+
+module.exports = ChapterAssignment = mongoose.model("chapterassignments", ChapterAssignmentSchema);
