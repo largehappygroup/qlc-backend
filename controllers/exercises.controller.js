@@ -1,5 +1,4 @@
 const Exercise = require("../models/Exercise.js");
-const Question = require("../models/Question.js");
 const mongoose = require("mongoose");
 const axios = require("axios");
 const { ObjectId } = mongoose.Types;

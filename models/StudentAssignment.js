@@ -13,7 +13,7 @@ const StudentAssignmentSchema = new Schema({
         unique: true
     },
     userId: {
-        type: String,
+        type: String, // vunetid
         required: true
     },
     assignmentId: {

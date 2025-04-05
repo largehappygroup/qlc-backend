@@ -7,26 +7,33 @@ const { ObjectId } = Schema.Types;
  */
 
 const ChapterAssignmentSchema = new Schema({
+    chapter: {
+        type: ObjectId,
+        required: true,
+    },
     title: {
         type: String,
-        required: true // (ex. MadLibs)
-    }, 
+        required: true, // (ex. MadLibs)
+    },
     number: {
         type: Number,
-        required: true // (ex. PA05, we're storing 5)
+        required: true, // (ex. PA05, we're storing 5)
     },
     identifier: {
         type: String,
-        required: true // (ex. PA05-W, stores W)
+        required: true, // (ex. PA05-W, stores W)
     },
     instructions: {
         type: String,
-        required: true // basic instructions given to students
+        required: true, // basic instructions given to students
     },
     initialDueDate: {
         type: Date,
-        required: true // when students submit their own code
+        required: true, // when students submit their own code
     },
 });
 
-module.exports = ChapterAssignment = mongoose.model("chapterassignments", ChapterAssignmentSchema);
+module.exports = ChapterAssignment = mongoose.model(
+    "chapterassignments",
+    ChapterAssignmentSchema
+);

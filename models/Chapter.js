@@ -14,7 +14,11 @@ const ChapterSchema = new Schema({
     learningObjectives: [{
         type: String,
         required: true
-    }]
+    }],
+    title: {
+        type: String,
+        required: true // a recognizable title (ex. Introduction to Methods)
+    }
 });
 
 module.exports = Chapter = mongoose.model("chapters", ChapterSchema);

@@ -10,9 +10,12 @@ app.use(express.json());
 
 connectDB();
 
-app.use("/questions", require("./routes/questions.router.js"));
+app.use(
+    "/chapter-assignments",
+    require("./routes/chapterassignments.router.js")
+);
+app.use("/chapters", require("./routes/chapters.router.js"));
 app.use("/exercises", require("./routes/exercises.router.js"));
-app.use("/users", require("./routes/users.router.js"));
 
 app.get("/", (req, res) => {
     res.send("Ello :D");
