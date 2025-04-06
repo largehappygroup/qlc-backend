@@ -7,9 +7,11 @@ const {
     editChapter,
     getAllChapters,
     getChapter,
+    editAllChapters,
 } = require("../controllers/chapters.controller.js");
 
 router.post("/", createChapter);
+router.put("/", editAllChapters);
 router.put("/:id", editChapter);
 router.get("/", getAllChapters);
 router.get("/:id", getChapter);

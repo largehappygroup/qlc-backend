@@ -11,7 +11,8 @@ const createChapter = async (req, res) => {
 
     try {
         if (learningObjectives && title) {
-            const order = (await Chapter.countDocuments( {}, { hint: "_id_"} )) + 1;
+            const order =
+                (await Chapter.countDocuments({}, { hint: "_id_" })) + 1;
             const chapter = new Chapter({
                 order,
                 assignments,
@@ -93,6 +94,33 @@ const editChapter = async (req, res) => {
 };
 
 /**
+ * Updates multiple chapters
+ * @param {*} req - request object
+ * @param {*} res - response object
+ * @returns - response object with updated status
+ */
+const editAllChapters = async (req, res) => {
+    const { chapters } = req.body;
+
+    try {
+        if (chapters) {
+            for (const chapter of chapters) {
+                await Chapter.findByIdAndUpdate(chapter._id, chapter);
+            }
+
+            return res
+                .status(200)
+                .send({ message: "Chapters updated successfully." });
+        } else {
+            return res.status(400).send({ message: "Missing chapters." });
+        }
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({ message: "Internal server error." });
+    }
+};
+
+/**
  * Retrieves a chapter by ID.
  * @param {*} req - request details
  * @param {*} res - response details
@@ -143,4 +171,5 @@ module.exports = {
     editChapter,
     getChapter,
     getAllChapters,
+    editAllChapters
 };
