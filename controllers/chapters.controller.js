@@ -7,10 +7,11 @@ const Chapter = require("../models/Chapter.js");
  * @returns - response object with updated status
  */
 const createChapter = async (req, res) => {
-    const { order, assignments, learningObjectives, title } = req.body;
+    const { assignments, learningObjectives, title } = req.body;
 
     try {
-        if (order && learningObjectives && title) {
+        if (learningObjectives && title) {
+            const order = (await Chapter.countDocuments( {}, { hint: "_id_"} )) + 1;
             const chapter = new Chapter({
                 order,
                 assignments,
