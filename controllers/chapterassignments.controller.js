@@ -21,7 +21,17 @@ const createChapterAssignment = async (req, res) => {
             });
             const newChapterAssignment = await chapterAssignment.save();
 
-          
+            const updatedChapter = await Chapter.findByIdAndUpdate(
+                chapter, // The actual _id of the chapter, should be of type String or ObjectId
+                {
+                    $push: { assignments: newChapterAssignment._id }, // Append the new assignment _id
+                },
+                {
+                    new: true, // Option to return the updated document
+                    runValidators: true, // Ensure schema validation is run (if applicable)
+                }
+            );
+
             return res.status(200).json(newChapterAssignment);
         } else {
             return res

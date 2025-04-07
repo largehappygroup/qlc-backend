@@ -1,5 +1,5 @@
 const Chapter = require("../models/Chapter.js");
-
+const ChapterAssignment = require("../models/ChapterAssignment.js");
 /**
  * Initializes a chapter for a course
  * @param {*} req - request object
@@ -50,6 +50,20 @@ const deleteChapter = async (req, res) => {
 
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
+            }
+
+            for (const assignment of chapter.assignments) {
+                await ChapterAssignment.findByIdAndDelete(assignment);
+            }
+
+            const chaptersToFixOrder = await Chapter.find({
+                order: { $gt: chapter.order },
+            });
+
+            for (const toFixChapter of chaptersToFixOrder) {
+                await Chapter.findByIdAndUpdate(toFixChapter._id, {
+                    order: toFixChapter.order - 1,
+                });
             }
 
             return res
@@ -171,5 +185,5 @@ module.exports = {
     editChapter,
     getChapter,
     getAllChapters,
-    editAllChapters
+    editAllChapters,
 };
