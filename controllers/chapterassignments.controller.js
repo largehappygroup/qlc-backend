@@ -1,5 +1,5 @@
 const ChapterAssignment = require("../models/ChapterAssignment.js");
-
+const Chapter = require("../models/Chapter.js");
 /**
  * Initializes a chapter assignment for a chapter
  * @param {*} req - request object
@@ -7,24 +7,22 @@ const ChapterAssignment = require("../models/ChapterAssignment.js");
  * @returns - response object with updated status
  */
 const createChapterAssignment = async (req, res) => {
-    const { chapter, title, number, identifier, instructions, initialDueDate } =
+    const { chapter, title, identifier, instructions, initialDueDate } =
         req.body;
-
+    console.log(req.body);
     try {
-        if (
-            (chapter, title, number, identifier, instructions, initialDueDate)
-        ) {
+        if (chapter && title && identifier && instructions && initialDueDate) {
             const chapterAssignment = new ChapterAssignment({
                 chapter,
                 title,
-                number,
                 identifier,
                 instructions,
                 initialDueDate,
             });
-            await chapterAssignment.save();
+            const newChapterAssignment = await chapterAssignment.save();
 
-            return res.status(200).json(chapterAssignment);
+          
+            return res.status(200).json(newChapterAssignment);
         } else {
             return res
                 .status(400)

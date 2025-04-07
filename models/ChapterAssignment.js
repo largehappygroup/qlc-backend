@@ -10,18 +10,15 @@ const ChapterAssignmentSchema = new Schema({
     chapter: {
         type: ObjectId,
         required: true,
+        ref: "Chapter",
     },
     title: {
         type: String,
         required: true, // (ex. MadLibs)
     },
-    number: {
-        type: Number,
-        required: true, // (ex. PA05, we're storing 5)
-    },
     identifier: {
         type: String,
-        required: true, // (ex. PA05-W, stores W)
+        required: true, // (ex. PA05-W)
     },
     instructions: {
         type: String,

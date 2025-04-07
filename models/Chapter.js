@@ -9,7 +9,7 @@ const ChapterSchema = new Schema({
     },
     assignments: [{
         type: ObjectId,
-        ref: "Assignment",
+        ref: "ChapterAssignment",
     }],
     learningObjectives: [{
         type: String,
