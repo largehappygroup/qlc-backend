@@ -6,7 +6,6 @@ const ExerciseSchema = new Schema({
     _id: {
         type: ObjectId,
         required: true,
-        unique: true,
     },
     userId: {
         type: String,

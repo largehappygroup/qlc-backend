@@ -26,30 +26,7 @@ const createExercise = async (req, res) => {
                 return res.status(201).json(search);
             }
 
-            const response = await axios.get(
-                "https://opentdb.com/api.php?amount=5&category=18&difficulty=easy"
-            );
-            let questions = [];
-            const results = response.data.results;
-
-            for (let i = 0; i < results.length; i++) {
-                const result = results[i];
-
-                const question = new Question({
-                    _id: new ObjectId(),
-                    query: result.question,
-                    type: "multiple-choice",
-                    topics: ["Programming"],
-                    correctAnswer: result.correct_answer,
-                    difficulty: result.difficulty,
-                    otherAnswers: result.incorrect_answers,
-                    explanation: "Pretend an explanation exists here.",
-                });
-
-                await question.save();
-                questions.push({ _id: question._id, timeSpent: 0 });
-            }
-            //generate and create new exercises here
+            const questions = [];
             const exercise = new Exercise({
                 _id: new ObjectId(),
                 date,

@@ -16,7 +16,7 @@ app.use(
 );
 app.use("/chapters", require("./routes/chapters.router.js"));
 app.use("/exercises", require("./routes/exercises.router.js"));
-
+app.use("/users", require("./routes/users.router.js"));
 app.get("/", (req, res) => {
     res.send("Ello :D");
 });

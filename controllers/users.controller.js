@@ -11,9 +11,9 @@ const { ObjectId } = mongoose.Types;
  * @returns - response details (with status)
  */
 const createUser = async (req, res) => {
-    const { firstName, lastName, vuNetId, email } = req.body;
+    const { firstName, lastName, vuNetId, email, role } = req.body;
     try {
-        if (firstName && lastName && vuNetId && email) {
+        if (firstName && lastName && vuNetId && email && role) {
             const user = new User({
                 firstName,
                 lastName,

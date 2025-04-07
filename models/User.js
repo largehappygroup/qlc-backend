@@ -1,9 +1,14 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
+const { ObjectId } = Schema.Types;
 
-const StudentSchema = new Schema({
+const UserSchema = new Schema({
     _id: {
-        type: String, // vunetID
+        type: ObjectId,
+        required: true,
+    },
+    vuNetId: {
+        type: String,
         required: true,
         unique: true,
     },
@@ -20,20 +25,11 @@ const StudentSchema = new Schema({
         required: true,
         unique: true,
     },
-    term: {
-        type: String,
-        required: true
-    },
-    termYear: {
-        type: Number,
-        required: true
-    },
-    classification: {
+    role: {
         type: String,
         required: true,
-        enum: ["Freshman", "Sophomore", "Junior", "Senior"]
-    }
-
+        enum: ["admin", "faculty", "ta", "student"],
+    },
 });
 
-module.exports = Student = mongoose.model("student", StudentSchema);
+module.exports = User = mongoose.model("user", UserSchema);
