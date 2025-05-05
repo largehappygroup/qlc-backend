@@ -11,7 +11,7 @@ app.use(express.json());
 connectDB();
 
 app.use(
-    "/chapter-assignments",
+    "/assignments",
     require("./routes/chapterassignments.router.js")
 );
 app.use("/chapters", require("./routes/chapters.router.js"));

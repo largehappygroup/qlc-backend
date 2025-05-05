@@ -1,5 +1,7 @@
 const ChapterAssignment = require("../models/ChapterAssignment.js");
 const Chapter = require("../models/Chapter.js");
+const mongoose = require("mongoose");
+const { ObjectId } = mongoose.Types;
 /**
  * Initializes a chapter assignment for a chapter
  * @param {*} req - request object
@@ -153,8 +155,12 @@ const getChapterAssignment = async (req, res) => {
  * @returns - response details (with status)
  */
 const getAllChapterAssignments = async (req, res) => {
+    const { chapter } = req.query;
     try {
         let filter = {};
+        if (chapter && ObjectId.isValid(chapter)) {
+            filter.chapter = ObjectId.createFromHexString(chapter); 
+        }
 
         const chapterAssignments = await ChapterAssignment.find(filter);
         return res.status(200).json(chapterAssignments);
