@@ -4,29 +4,29 @@ const { ObjectId } = Schema.Types;
 
 const UserSchema = new Schema({
     _id: {
-        type: ObjectId,
+        type: ObjectId, // mongodb generated unique id for the user
         required: true,
     },
     vuNetId: {
-        type: String,
+        type: String, // vunetID for the user
         required: true,
         unique: true,
     },
     firstName: {
-        type: String,
+        type: String, // first name for the user
         required: true,
     },
     lastName: {
-        type: String,
+        type: String, // last name for the user
         required: true,
     },
     email: {
-        type: String,
+        type: String, // email address for the user
         required: true,
         unique: true,
     },
     role: {
-        type: String,
+        type: String, // user roles (for access purposes)
         required: true,
         enum: ["admin", "faculty", "ta", "student"],
     },

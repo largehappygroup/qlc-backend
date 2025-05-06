@@ -7,12 +7,12 @@ const ChapterSchema = new Schema({
         type: Number,
         required: true, // Chapter 1 vs. Chapter 2 etc
     },
-    assignments: [{
-        type: ObjectId,
+    assignmentIds: [{
+        type: ObjectId, // corresponding assignment IDs for the chapter
         ref: "ChapterAssignment",
     }],
     learningObjectives: [{
-        type: String,
+        type: String, // list of learning objectives based on CS1101
         required: true
     }],
     title: {

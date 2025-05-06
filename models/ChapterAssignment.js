@@ -7,8 +7,8 @@ const { ObjectId } = Schema.Types;
  */
 
 const ChapterAssignmentSchema = new Schema({
-    chapter: {
-        type: ObjectId,
+    chapterId: {
+        type: ObjectId, // mongodb generated unique id for the corresponding chapter
         required: true,
         ref: "Chapter",
     },
@@ -24,11 +24,17 @@ const ChapterAssignmentSchema = new Schema({
         type: String,
         required: true, // basic instructions given to students
     },
-    initialDueDate: {
+    startDate: {
+        type: String,
+        required: true // when to assign students their exercises
+    },
+    dueDate: {
         type: Date,
-        required: true, // when students submit their own code
+        required: true, // when exercises are due for the students
     },
 });
+
+
 
 module.exports = ChapterAssignment = mongoose.model(
     "chapterassignments",
