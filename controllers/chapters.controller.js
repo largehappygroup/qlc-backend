@@ -15,11 +15,23 @@ const createChapter = async (req, res) => {
                 (await Chapter.countDocuments({}, { hint: "_id_" })) + 1;
             const chapter = new Chapter({
                 order,
-                assignments,
                 learningObjectives,
                 title,
             });
             await chapter.save();
+
+            if (assignments) {
+                const newAssignments = await ChapterAssignment.insertMany(
+                    assignments.map((assignment) => ({
+                        ...assignment,
+                        chapterId: chapter._id,
+                    }))
+                );
+                chapter.assignmentIds = newAssignments.map(
+                    (assignment) => assignment._id
+                );
+                await chapter.save();
+            }
 
             return res.status(200).json(chapter);
         } else {
@@ -51,9 +63,10 @@ const deleteChapter = async (req, res) => {
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
             }
-
-            for (const assignment of chapter.assignments) {
-                await ChapterAssignment.findByIdAndDelete(assignment);
+            if (chapter.assignmentIds) {
+                for (const assignment of chapter.assignmentIds) {
+                    await ChapterAssignment.findByIdAndDelete(assignment);
+                }
             }
 
             const chaptersToFixOrder = await Chapter.find({
@@ -88,14 +101,56 @@ const deleteChapter = async (req, res) => {
  */
 const editChapter = async (req, res) => {
     const id = req.params?.id;
+    const { title, order, assignments, learningObjectives } = req.body;
 
     try {
         if (id) {
-            const chapter = await Chapter.findByIdAndUpdate(id, req.body);
+            const chapter = await Chapter.findById(id);
 
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
             }
+
+            chapter.title = title;
+            chapter.learningObjectives = learningObjectives;
+            chapter.order = order;
+            
+            if (assignments) {
+                const newAssignmentIds = [];
+
+                const incomingAssignmentIds = assignments
+                    .filter((a) => a._id)
+                    .map((a) => a._id.toString());
+                const existingAssignments = await ChapterAssignment.find({
+                    chapterId: id,
+                });
+                const toDelete = existingAssignments.filter(
+                    (a) => !incomingAssignmentIds.includes(a._id.toString())
+                );
+                await ChapterAssignment.deleteMany({
+                    _id: { $in: toDelete.map((a) => a._id) },
+                });
+
+                // 2. Process new and updated assignments
+                for (const a of assignments) {
+                    if (a._id) {
+                        // Update existing assignment
+                        await ChapterAssignment.findByIdAndUpdate(a._id, a);
+                        newAssignmentIds.push(a._id);
+                    } else {
+                        // Create new assignment
+                        const newA = await ChapterAssignment.create({
+                            ...a,
+                            chapterId: id,
+                        });
+                        newAssignmentIds.push(newA._id);
+                    }
+                }
+
+                // 3. Update chapter assignment list
+                chapter.assignmentIds = newAssignmentIds;
+            }
+            await chapter.save();
 
             return res.status(200).json(chapter);
         } else {
@@ -168,9 +223,12 @@ const getChapter = async (req, res) => {
  * @returns - response details (with status)
  */
 const getAllChapters = async (req, res) => {
+    const { order } = req.query;
     try {
         let filter = {};
-
+        if (order) {
+            filter.order = Number(order);
+        }
         const chapters = await Chapter.find(filter);
         return res.status(200).json(chapters);
     } catch (err) {
