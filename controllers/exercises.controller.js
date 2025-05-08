@@ -147,6 +147,7 @@ const getExercise = async (req, res) => {
                     availableAnswers,
                     userAnswers: question.userAnswers,
                     timeSpent: question.timeSpent,
+                    correct: question.correct,
                 };
 
                 exercise.questions[i] = filteredQuestion;
@@ -230,6 +231,7 @@ const getAllExercises = async (req, res) => {
                     availableAnswers,
                     userAnswers: question.userAnswers,
                     timeSpent: question.timeSpent,
+                    correct: question.correct,
                 };
 
                 exercises[j].questions[i] = filteredQuestion;
@@ -276,6 +278,7 @@ const checkQuestion = async (req, res) => {
                 // increment if this is the user's first attempt
                 if (question.userAnswers.length === 0) {
                     exercise.totalCorrect += 1;
+                    question.correct = true;
                 }
 
                 exercise.totalTimeSpent += timeSpent;
@@ -286,6 +289,8 @@ const checkQuestion = async (req, res) => {
                 } else {
                     exercise.status = "In Progress";
                 }
+            } else {
+                question.correct = false;
             }
 
             question.timeSpent = timeSpent;
