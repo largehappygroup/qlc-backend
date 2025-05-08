@@ -121,36 +121,35 @@ const getExercise = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const exercise = await Exercise.findById(id);
+            const exercise = await Exercise.findById(id).lean();
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
-            if (exercise.questions) {
-                for (let i = 0; i < exercise.questions.length; i++) {
-                    const question = exercise.questions[i];
-                    let availableAnswers = [
-                        question.correctAnswer,
-                        ...question.otherAnswers,
-                    ]
-                        .map((value) => ({ value, sort: Math.random() }))
-                        .sort((a, b) => a.sort - b.sort)
-                        .map(({ value }) => value);
 
-                    const filteredQuestion = {
-                        _id: question._id,
-                        query: question.query,
-                        type: question.type,
-                        hints: question.hints,
-                        topics: question.topics,
-                        difficulty: question.difficulty,
-                        explanation: question.explanation,
-                        availableAnswers: availableAnswers,
-                        userAnswers: question.userAnswers,
-                        timeSpent: question.timeSpent,
-                    };
+            for (let i = 0; i < exercise.questions.length; i++) {
+                const question = exercise.questions[i];
+                let availableAnswers = [
+                    question.correctAnswer,
+                    ...question.otherAnswers,
+                ]
+                    .map((value) => ({ value, sort: Math.random() }))
+                    .sort((a, b) => a.sort - b.sort)
+                    .map(({ value }) => value);
 
-                    exercise.questions[i] = filteredQuestion;
-                }
+                const filteredQuestion = {
+                    _id: question._id,
+                    query: question.query,
+                    type: question.type,
+                    hints: question.hints,
+                    topics: question.topics,
+                    difficulty: question.difficulty,
+                    explanation: question.explanation,
+                    availableAnswers,
+                    userAnswers: question.userAnswers,
+                    timeSpent: question.timeSpent,
+                };
+
+                exercise.questions[i] = filteredQuestion;
             }
 
             return res.status(200).json(exercise);
@@ -254,7 +253,7 @@ const downloadExercises = async (req, res) => {
 const checkQuestion = async (req, res) => {
     const id = req.params?.id; // exercise id
     const { questionId } = req.query;
-    const { userAnswer } = req.body;
+    const { userAnswer, timeSpent } = req.body;
     try {
         if (id) {
             const exercise = await Exercise.findById(id);
@@ -269,7 +268,40 @@ const checkQuestion = async (req, res) => {
                 return res.status(404).send({ message: "Question not found." });
             }
 
-            return res.status(200).json(userAnswer === question.correctAnswer);
+            const result = userAnswer === question.correctAnswer;
+
+            if (result) {
+                exercise.completedQuestions += 1;
+
+                // increment if this is the user's first attempt
+                if (question.userAnswers.length === 0) {
+                    exercise.totalCorrect += 1;
+                }
+
+                exercise.totalTimeSpent += timeSpent;
+
+                if (exercise.completedQuestions === exercise.questions.length) {
+                    exercise.status = "Complete";
+                    exercise.completedTimestamp = new Date();
+                } else {
+                    exercise.status = "In Progress";
+                }
+            }
+
+            question.timeSpent = timeSpent;
+
+            question.userAnswers = [
+                ...question.userAnswers,
+                {
+                    _id: new ObjectId(),
+                    timeStamp: new Date(),
+                    selectedAnswer: userAnswer,
+                },
+            ];
+
+            exercise.save();
+
+            return res.status(200).json({ result });
         } else {
             return res.status(400).send({ message: "Missing Question ID." });
         }
