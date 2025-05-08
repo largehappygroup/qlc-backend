@@ -251,6 +251,37 @@ const downloadExercises = async (req, res) => {
     return res.status(200);
 };
 
+const checkQuestion = async (req, res) => {
+    const id = req.params?.id; // exercise id
+    const { questionId } = req.query;
+    const { userAnswer } = req.body;
+    try {
+        if (id) {
+            const exercise = await Exercise.findById(id);
+            if (!exercise) {
+                return res.status(404).send({ message: "Exercise not found." });
+            }
+
+            const question = exercise.questions.find((question) =>
+                ObjectId.createFromHexString(questionId).equals(question._id)
+            );
+            if (!question) {
+                return res.status(404).send({ message: "Question not found." });
+            }
+
+            return res.status(200).json(userAnswer === question.correctAnswer);
+        } else {
+            return res.status(400).send({ message: "Missing Question ID." });
+        }
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({
+            message: "Issue with checking user answer.",
+            error: err.message,
+        });
+    }
+};
+
 module.exports = {
     createExercise,
     deleteExercise,
@@ -258,4 +289,5 @@ module.exports = {
     getExercise,
     getAllExercises,
     downloadExercises,
+    checkQuestion,
 };
