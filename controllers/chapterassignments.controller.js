@@ -9,30 +9,27 @@ const { ObjectId } = mongoose.Types;
  * @returns - response object with updated status
  */
 const createChapterAssignment = async (req, res) => {
-    const { chapter, title, identifier, instructions, initialDueDate } =
+    const { chapterId, title, identifier, instructions, startDate, dueDate } =
         req.body;
-    console.log(req.body);
     try {
-        if (chapter && title && identifier && instructions && initialDueDate) {
+        if (
+            chapterId &&
+            title &&
+            identifier &&
+            instructions &&
+            startDate &&
+            dueDate
+        ) {
             const chapterAssignment = new ChapterAssignment({
-                chapter,
+                _id: new ObjectId(),
+                chapterId,
                 title,
                 identifier,
                 instructions,
-                initialDueDate,
+                startDate,
+                dueDate,
             });
             const newChapterAssignment = await chapterAssignment.save();
-
-            const updatedChapter = await Chapter.findByIdAndUpdate(
-                chapter, // The actual _id of the chapter, should be of type String or ObjectId
-                {
-                    $push: { assignments: newChapterAssignment._id }, // Append the new assignment _id
-                },
-                {
-                    new: true, // Option to return the updated document
-                    runValidators: true, // Ensure schema validation is run (if applicable)
-                }
-            );
 
             return res.status(200).json(newChapterAssignment);
         } else {
@@ -155,11 +152,11 @@ const getChapterAssignment = async (req, res) => {
  * @returns - response details (with status)
  */
 const getAllChapterAssignments = async (req, res) => {
-    const { chapter } = req.query;
+    const { chapterId } = req.query;
     try {
         let filter = {};
-        if (chapter && ObjectId.isValid(chapter)) {
-            filter.chapter = ObjectId.createFromHexString(chapter); 
+        if (chapterId && ObjectId.isValid(chapterId)) {
+            filter.chapterId = ObjectId.createFromHexString(chapterId);
         }
 
         const chapterAssignments = await ChapterAssignment.find(filter);

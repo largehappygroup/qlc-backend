@@ -125,6 +125,34 @@ const getExercise = async (req, res) => {
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
+            if (exercise.questions) {
+                for (let i = 0; i < exercise.questions.length; i++) {
+                    const question = exercise.questions[i];
+                    let availableAnswers = [
+                        question.correctAnswer,
+                        ...question.otherAnswers,
+                    ]
+                        .map((value) => ({ value, sort: Math.random() }))
+                        .sort((a, b) => a.sort - b.sort)
+                        .map(({ value }) => value);
+
+                    const filteredQuestion = {
+                        _id: question._id,
+                        query: question.query,
+                        type: question.type,
+                        hints: question.hints,
+                        topics: question.topics,
+                        difficulty: question.difficulty,
+                        explanation: question.explanation,
+                        availableAnswers: availableAnswers,
+                        userAnswers: question.userAnswers,
+                        timeSpent: question.timeSpent,
+                    };
+
+                    exercise.questions[i] = filteredQuestion;
+                }
+            }
+
             return res.status(200).json(exercise);
         } else {
             return res.status(400).send({ message: "Missing Exercise ID." });
@@ -145,12 +173,16 @@ const getExercise = async (req, res) => {
  * @returns - response details (with status)
  */
 const getAllExercises = async (req, res) => {
-    const { userId, date, month, year } = req.query;
+    const { userId, date, month, year, assignmentId } = req.query;
     try {
         let filter = {};
 
         if (userId) {
             filter.userId = userId;
+        }
+
+        if (assignmentId) {
+            filter.assignmentId = assignmentId;
         }
 
         if (date) {
@@ -173,7 +205,37 @@ const getAllExercises = async (req, res) => {
             }
         }
 
-        const exercises = await Exercise.find(filter);
+        const exercises = await Exercise.find(filter).lean();
+
+        for (let j = 0; j < exercises.length; j++) {
+            const exercise = exercises[j];
+
+            for (let i = 0; i < exercise.questions.length; i++) {
+                const question = exercise.questions[i];
+                let availableAnswers = [
+                    question.correctAnswer,
+                    ...question.otherAnswers,
+                ]
+                    .map((value) => ({ value, sort: Math.random() }))
+                    .sort((a, b) => a.sort - b.sort)
+                    .map(({ value }) => value);
+
+                const filteredQuestion = {
+                    _id: question._id,
+                    query: question.query,
+                    type: question.type,
+                    hints: question.hints,
+                    topics: question.topics,
+                    difficulty: question.difficulty,
+                    explanation: question.explanation,
+                    availableAnswers,
+                    userAnswers: question.userAnswers,
+                    timeSpent: question.timeSpent,
+                };
+
+                exercises[j].questions[i] = filteredQuestion;
+            }
+        }
 
         return res.status(200).json(exercises);
     } catch (err) {
@@ -189,6 +251,37 @@ const downloadExercises = async (req, res) => {
     return res.status(200);
 };
 
+const checkQuestion = async (req, res) => {
+    const id = req.params?.id; // exercise id
+    const { questionId } = req.query;
+    const { userAnswer } = req.body;
+    try {
+        if (id) {
+            const exercise = await Exercise.findById(id);
+            if (!exercise) {
+                return res.status(404).send({ message: "Exercise not found." });
+            }
+
+            const question = exercise.questions.find((question) =>
+                ObjectId.createFromHexString(questionId).equals(question._id)
+            );
+            if (!question) {
+                return res.status(404).send({ message: "Question not found." });
+            }
+
+            return res.status(200).json(userAnswer === question.correctAnswer);
+        } else {
+            return res.status(400).send({ message: "Missing Question ID." });
+        }
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({
+            message: "Issue with checking user answer.",
+            error: err.message,
+        });
+    }
+};
+
 module.exports = {
     createExercise,
     deleteExercise,
@@ -196,4 +289,5 @@ module.exports = {
     getExercise,
     getAllExercises,
     downloadExercises,
+    checkQuestion,
 };

@@ -17,14 +17,6 @@ const ExerciseSchema = new Schema({
         ref: "User",
         required: true,
     },
-    startDate: {
-        type: Date, // when users receive this exercise
-        required: true,
-    },
-    dueDate: {
-        type: Date, // when users should finish this exercise
-        required: true,
-    },
     assignmentId: {
         type: ObjectId, // mongodb generated unique id for the assignment corresponding to exercise
         required: true,
@@ -38,7 +30,7 @@ const ExerciseSchema = new Schema({
             },
             query: {
                 type: String, // prompt/question for the exercise
-                required: true, 
+                required: true,
             },
             type: {
                 type: String, // format for the question
@@ -85,6 +77,13 @@ const ExerciseSchema = new Schema({
         type: String, // status indicators for the user
         required: true,
         enum: ["Not Started", "In Progress", "Complete"],
+    },
+    completedTimestamp: {
+        type: Date, // when the user completely finished the exercise
+    },
+    completedQuestions: {
+        type: Number,
+        required: true,
     },
     totalTimeSpent: { type: Number, required: true }, // total amount of time spent in seconds on all questions
     totalCorrect: { type: Number, required: true }, // number of questions the user got correct the first time they saw the question

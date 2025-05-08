@@ -25,7 +25,7 @@ const ChapterAssignmentSchema = new Schema({
         required: true, // basic instructions given to students
     },
     startDate: {
-        type: String,
+        type: Date,
         required: true // when to assign students their exercises
     },
     dueDate: {
