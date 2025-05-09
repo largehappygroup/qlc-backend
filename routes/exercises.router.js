@@ -13,10 +13,10 @@ const {
 
 router.post("/", createExercise);
 router.put("/:id", editExercise);
+router.get("/download", downloadExercises);
 router.get("/", getAllExercises);
 router.get("/:id", getExercise);
 router.delete("/:id", deleteExercise);
-router.get("/download", downloadExercises);
 router.post("/:id/check", checkQuestion);
 
 module.exports = router;
