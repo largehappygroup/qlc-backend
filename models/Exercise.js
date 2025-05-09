@@ -71,6 +71,9 @@ const ExerciseSchema = new Schema({
                 type: Number, // total amount of time spent in seconds on the question
                 required: true,
             },
+            correct: {
+                type: Boolean, // whether the user got the answer correct the first time
+            }
         },
     ],
     status: {
