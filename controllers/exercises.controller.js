@@ -179,11 +179,11 @@ const getAllExercises = async (req, res) => {
         let filter = {};
 
         if (userId) {
-            filter.userId = userId;
+            filter.userId = ObjectId.createFromHexString(userId);
         }
 
         if (assignmentId) {
-            filter.assignmentId = assignmentId;
+            filter.assignmentId = ObjectId.createFromHexString(assignmentId);
         }
 
         if (date) {
