@@ -13,10 +13,11 @@ const {
 
 router.post("/", createUser);
 router.put("/:id", editUser);
+router.get("/download", downloadUsers);
+
 router.get("/", getAllUsers);
 router.get("/:id/streak", getStreak)
 router.get("/:id", getUser);
 router.delete("/:id", deleteUser);
-router.get("/download", downloadUsers);
 
 module.exports = router;

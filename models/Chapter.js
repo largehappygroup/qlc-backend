@@ -18,6 +18,9 @@ const ChapterSchema = new Schema({
     title: {
         type: String,
         required: true // a recognizable title (ex. Introduction to Methods)
+    },
+    description: {
+        type: String, // general description informing what the chapter is about
     }
 });
 

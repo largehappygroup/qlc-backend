@@ -1,6 +1,7 @@
 const Exercise = require("../models/Exercise.js");
 const mongoose = require("mongoose");
-const axios = require("axios");
+const { Parser } = require("json2csv");
+const { unwind, flatten } = require("@json2csv/transforms");
 const { ObjectId } = mongoose.Types;
 
 /**
@@ -178,11 +179,11 @@ const getAllExercises = async (req, res) => {
         let filter = {};
 
         if (userId) {
-            filter.userId = userId;
+            filter.userId = ObjectId.createFromHexString(userId);
         }
 
         if (assignmentId) {
-            filter.assignmentId = assignmentId;
+            filter.assignmentId = ObjectId.createFromHexString(assignmentId);
         }
 
         if (date) {
@@ -249,7 +250,29 @@ const getAllExercises = async (req, res) => {
 };
 
 const downloadExercises = async (req, res) => {
-    return res.status(200);
+    try {
+        const exercises = await Exercise.find().lean();
+        const opts = {
+            transforms: [
+                unwind({
+                    paths: ["questions", "questions.userAnswers"],
+                    blankOut: true,
+                }),
+                flatten({ object: true, array: true, separator: "|" }),
+            ],
+        };
+        const parser = new Parser(opts);
+        const csv = parser.parse(exercises);
+        console.log(csv);
+        res.header("Content-Type", "text/csv");
+        res.attachment("exercises.csv");
+        return res.status(200).send(csv);
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .send({ message: "Internal Server Error", error: err });
+    }
 };
 
 const checkQuestion = async (req, res) => {

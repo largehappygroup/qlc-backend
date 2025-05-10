@@ -1,5 +1,7 @@
 const User = require("../models/User.js");
 const Exercise = require("../models/Exercise.js");
+const { Parser } = require("json2csv");
+const { flatten } = require("@json2csv/transforms");
 
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
@@ -147,7 +149,25 @@ const getAllUsers = async (req, res) => {
  * @returns - response details (with status)
  */
 const downloadUsers = async (req, res) => {
-    return res.status(200);
+    try {
+        const users = await User.find().lean();
+        const opts = {
+            transforms: [
+                flatten({ object: true, array: true, separator: "|" }),
+            ],
+        };
+
+        const parser = new Parser(opts);
+        const csv = parser.parse(users);
+        res.header("Content-Type", "text/csv");
+        res.attachment("users.csv");
+        return res.status(200).send(csv);
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .send({ message: "Internal Server Error.", error: err });
+    }
 };
 
 /**

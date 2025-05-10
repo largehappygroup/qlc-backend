@@ -152,14 +152,20 @@ const getChapterAssignment = async (req, res) => {
  * @returns - response details (with status)
  */
 const getAllChapterAssignments = async (req, res) => {
-    const { chapterId } = req.query;
+    const { chapterId, date } = req.query;
     try {
         let filter = {};
         if (chapterId && ObjectId.isValid(chapterId)) {
             filter.chapterId = ObjectId.createFromHexString(chapterId);
         }
 
+        if (date) {
+            filter.startDate = { $lte: new Date(date) };
+            filter.dueDate = { $gte: new Date(date) };
+        }
+        
         const chapterAssignments = await ChapterAssignment.find(filter);
+        console.log(chapterAssignments)
         return res.status(200).json(chapterAssignments);
     } catch (err) {
         console.error(err.message);
