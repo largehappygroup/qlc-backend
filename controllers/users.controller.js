@@ -170,58 +170,88 @@ const downloadUsers = async (req, res) => {
     }
 };
 
-/**
- * Gets the streak amount for the user
- *
- */
-const getStreak = async (req, res) => {
-    const id = req.params?.id;
+const getAverageScoreDistribution = async (req, res) => {
     try {
-        if (id) {
-            const exercises = await Exercise.find({
-                userId: id,
-                status: "complete",
+        const users = await User.find({ role: "student" });
+
+        let results = [
+            {
+                percentage: "0%-49%",
+                students: 0,
+            },
+            {
+                percentage: "50%-59%",
+                students: 0,
+            },
+            {
+                percentage: "60%-69%",
+                students: 0,
+            },
+            {
+                percentage: "70%-79%",
+                students: 0,
+            },
+            {
+                percentage: "80%-89%",
+                students: 0,
+            },
+            {
+                percentage: "90%-100%",
+                students: 0,
+            },
+        ];
+
+        for (const user of users) {
+            const userExercises = await Exercise.find({
+                userId: user._id,
+                status: "Complete",
             });
-            let sortExercises = [...exercises];
-            sortExercises.sort((a, b) => b.date - a.date);
+            if (userExercises.length > 0) {
+                const average =
+                    userExercises.reduce(function (acc, exercise) {
+                        acc +=
+                            (exercise.totalCorrect /
+                                exercise.questions.length) *
+                            100;
+                        return acc;
+                    }, 0) / userExercises.length;
 
-            let streak = 0;
+                let range = null;
+                if (average < 50) range = "0%-49%";
+                else if (average < 60) range = "50%-59%";
+                else if (average < 70) range = "60%-69%";
+                else if (average < 80) range = "70%-79%";
+                else if (average < 90) range = "80%-89%";
+                else if (average <= 100) range = "90%-100%";
+                else
+                    throw new Error("Unnatural average calculated: " + average);
 
-            const today = new Date();
-
-            for (let i = 0; i < sortExercises.length; i++) {
-                const date = sortExercises[i].date;
-                if (
-                    streak === 0 &&
-                    date.toDateString() === today.toDateString()
-                ) {
-                    streak++;
-                } else if (
-                    streak > 0 &&
-                    isOneDayApart(date, sortExercises[i - 1].date)
-                ) {
-                    streak++;
-                } else {
-                    break;
+                const resultItem = results.find((r) => r.percentage === range);
+                if (resultItem) {
+                    resultItem.students += 1;
                 }
             }
-            return res
-                .status(200)
-                .json(`${streak} day${streak != 1 ? "s" : ""}`);
-        } else {
-            return res.status(400).send({ message: "Missing User ID" });
         }
-    } catch (err) {}
+
+        return res.status(200).json(results);
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .send({ message: "Internal Server Error.", error: err });
+    }
 };
 
-const isOneDayApart = (date1, date2) => {
-    const dayInMilliseconds = 24 * 60 * 60 * 1000; // One day in milliseconds
-
-    // Set time to midnight for both dates to ignore the time part
-    const date1Midnight = new Date(date1.setHours(0, 0, 0, 0));
-    const date2Midnight = new Date(date2.setHours(0, 0, 0, 0));
-
-    return date1Midnight - date2Midnight === dayInMilliseconds;
+const getTotalStudents = async (req, res) => {
+    try {
+        const students = await User.find({ role: "student" });
+        return res.status(200).json(students.length);
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .send({ message: "Internal Server Error", error: err });
+    }
 };
 
 module.exports = {
@@ -231,5 +261,6 @@ module.exports = {
     getUser,
     getAllUsers,
     downloadUsers,
-    getStreak,
+    getAverageScoreDistribution,
+    getTotalStudents
 };
