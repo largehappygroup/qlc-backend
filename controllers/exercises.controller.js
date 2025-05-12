@@ -1,4 +1,6 @@
 const Exercise = require("../models/Exercise.js");
+const ChapterAssignment = require("../models/ChapterAssignment.js");
+const User = require("../models/User.js");
 const mongoose = require("mongoose");
 const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
@@ -342,6 +344,150 @@ const checkQuestion = async (req, res) => {
     }
 };
 
+const getAverageScore = async (req, res) => {
+    const { userId } = req.query;
+    try {
+        let filter = {};
+
+        if (userId) {
+            filter.userId = ObjectId.createFromHexString(userId);
+        }
+        const exercises = await Exercise.find(filter);
+        if (exercises.length > 0) {
+            const average =
+                exercises.reduce(function (acc, exercise) {
+                    acc +=
+                        (exercise.totalCorrect / exercise.questions.length) *
+                        100;
+                    return acc;
+                }, 0) / exercises.length;
+            return res.status(200).json(Math.round(average));
+        } else {
+            return res.status(201).json(0);
+        }
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .send({ message: "Internal Server Error", error: err });
+    }
+};
+
+const getAverageTimeSpent = async (req, res) => {
+    const { userId } = req.query;
+    try {
+        let filter = {};
+
+        if (userId) {
+            filter.userId = ObjectId.createFromHexString(userId);
+        }
+        const exercises = await Exercise.find(filter);
+        if (exercises.length > 0) {
+            const timeSpent =
+                exercises.reduce(function (acc, exercise) {
+                    acc += exercise.totalTimeSpent;
+                    return acc;
+                }, 0) / exercises.length;
+
+            const asDate = new Date(timeSpent * 1000);
+            console.log(timeSpent);
+            const format =
+                asDate.getUTCHours().toString().padStart(2, "0") +
+                ":" +
+                asDate.getUTCMinutes().toString().padStart(2, "0") +
+                ":" +
+                asDate.getUTCSeconds().toString().padStart(2, "0");
+            return res.status(200).json(format);
+        } else {
+            return res.status(201).json(0);
+        }
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .send({ message: "Internal Server Error", error: err });
+    }
+};
+
+const getRecentActivity = async (req, res) => {
+    const { userId } = req.query;
+
+    try {
+        let filter = { status: "Complete" };
+        if (userId) {
+            filter.userId = ObjectId.createFromHexString(userId);
+        }
+
+        const exercises = await Exercise.find(filter)
+            .sort({ completedTimestamp: -1 })
+            .limit(10);
+
+        let results = [];
+
+        for (const exercise of exercises) {
+            const user = await User.findById(exercise.userId);
+            const assignment = await ChapterAssignment.findById(
+                exercise.assignmentId
+            );
+            const dateTimestamp = new Date(exercise.completedTimestamp);
+            const now = new Date();
+
+            // Strip times
+            const today = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate()
+            );
+            const givenDate = new Date(
+                dateTimestamp.getFullYear(),
+                dateTimestamp.getMonth(),
+                dateTimestamp.getDate()
+            );
+
+            // Calculate day difference
+            const msPerDay = 24 * 60 * 60 * 1000;
+            const dayDiff = Math.floor((today - givenDate) / msPerDay);
+
+            let timestamp;
+
+            if (dayDiff === 0) {
+                // Today
+                timestamp =
+                    "Today, " +
+                    dateTimestamp.toLocaleTimeString([], {
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                    });
+            } else if (dayDiff === 1) {
+                timestamp = "Yesterday";
+            } else if (dayDiff >= 2 && dayDiff <= 6) {
+                timestamp = `${dayDiff} days ago`;
+            } else {
+                timestamp = dateTimestamp.toLocaleDateString();
+            }
+
+            const result = {
+                userName: `${user.firstName} ${user.lastName}`,
+                assignment: {
+                    identifier: assignment.identifier,
+                    title: assignment.title,
+                },
+                completedTimestamp: timestamp,
+            };
+
+            results.push(result);
+        }
+
+        return res.status(200).json(results);
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .send({ message: "Internal Server Error", error: err });
+    }
+};
+
 module.exports = {
     createExercise,
     deleteExercise,
@@ -350,4 +496,7 @@ module.exports = {
     getAllExercises,
     downloadExercises,
     checkQuestion,
+    getAverageScore,
+    getAverageTimeSpent,
+    getRecentActivity,
 };

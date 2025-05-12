@@ -254,6 +254,8 @@ const getTotalStudents = async (req, res) => {
     }
 };
 
+
+
 module.exports = {
     createUser,
     deleteUser,
