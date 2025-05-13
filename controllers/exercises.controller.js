@@ -474,6 +474,7 @@ const getRecentActivity = async (req, res) => {
                     title: assignment.title,
                 },
                 completedTimestamp: timestamp,
+                score: `${exercise.totalCorrect}/${exercise.questions.length}`,
             };
 
             results.push(result);
