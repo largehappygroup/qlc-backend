@@ -165,7 +165,6 @@ const getAllChapterAssignments = async (req, res) => {
         }
         
         const chapterAssignments = await ChapterAssignment.find(filter);
-        console.log(chapterAssignments)
         return res.status(200).json(chapterAssignments);
     } catch (err) {
         console.error(err.message);

@@ -265,7 +265,6 @@ const downloadExercises = async (req, res) => {
         };
         const parser = new Parser(opts);
         const csv = parser.parse(exercises);
-        console.log(csv);
         res.header("Content-Type", "text/csv");
         res.attachment("exercises.csv");
         return res.status(200).send(csv);
@@ -390,7 +389,6 @@ const getAverageTimeSpent = async (req, res) => {
                 }, 0) / exercises.length;
 
             const asDate = new Date(timeSpent * 1000);
-            console.log(timeSpent);
             const format =
                 asDate.getUTCHours().toString().padStart(2, "0") +
                 ":" +
