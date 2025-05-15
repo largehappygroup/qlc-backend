@@ -21,7 +21,12 @@ const ChapterSchema = new Schema({
     },
     description: {
         type: String, // general description informing what the chapter is about
-    }
+    },
+    releaseDate: {
+        type: Date,
+        required: true // when the chapter should appear in the students' pages
+    },
+
 });
 
 module.exports = Chapter = mongoose.model("chapters", ChapterSchema);

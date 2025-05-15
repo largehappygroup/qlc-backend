@@ -171,64 +171,92 @@ const downloadUsers = async (req, res) => {
 };
 
 const getAverageScoreDistribution = async (req, res) => {
+    const { userId } = req.query;
     try {
-        const users = await User.find({ role: "student" });
-
         let results = [
             {
                 percentage: "0%-49%",
-                students: 0,
+                data: 0,
             },
             {
                 percentage: "50%-59%",
-                students: 0,
+                data: 0,
             },
             {
                 percentage: "60%-69%",
-                students: 0,
+                data: 0,
             },
             {
                 percentage: "70%-79%",
-                students: 0,
+                data: 0,
             },
             {
                 percentage: "80%-89%",
-                students: 0,
+                data: 0,
             },
             {
                 percentage: "90%-100%",
-                students: 0,
+                data: 0,
             },
         ];
-
-        for (const user of users) {
+        if (userId) {
             const userExercises = await Exercise.find({
-                userId: user._id,
+                userId: ObjectId.createFromHexString(userId),
                 status: "Complete",
             });
-            if (userExercises.length > 0) {
-                const average =
-                    userExercises.reduce(function (acc, exercise) {
-                        acc +=
-                            (exercise.totalCorrect /
-                                exercise.questions.length) *
-                            100;
-                        return acc;
-                    }, 0) / userExercises.length;
-
+            for (const exercise of userExercises) {
+                const score =
+                    (exercise.totalCorrect / exercise.questions.length) * 100;
                 let range = null;
-                if (average < 50) range = "0%-49%";
-                else if (average < 60) range = "50%-59%";
-                else if (average < 70) range = "60%-69%";
-                else if (average < 80) range = "70%-79%";
-                else if (average < 90) range = "80%-89%";
-                else if (average <= 100) range = "90%-100%";
-                else
-                    throw new Error("Unnatural average calculated: " + average);
+                if (score < 50) range = "0%-49%";
+                else if (score < 60) range = "50%-59%";
+                else if (score < 70) range = "60%-69%";
+                else if (score < 80) range = "70%-79%";
+                else if (score < 90) range = "80%-89%";
+                else if (score <= 100) range = "90%-100%";
+                else throw new Error("Unnatural average calculated: " + score);
 
                 const resultItem = results.find((r) => r.percentage === range);
                 if (resultItem) {
-                    resultItem.students += 1;
+                    resultItem.data += 1;
+                }
+            }
+        } else {
+            const users = await User.find({ role: "student" });
+
+            for (const user of users) {
+                const userExercises = await Exercise.find({
+                    userId: user._id,
+                    status: "Complete",
+                });
+                if (userExercises.length > 0) {
+                    const average =
+                        userExercises.reduce(function (acc, exercise) {
+                            acc +=
+                                (exercise.totalCorrect /
+                                    exercise.questions.length) *
+                                100;
+                            return acc;
+                        }, 0) / userExercises.length;
+
+                    let range = null;
+                    if (average < 50) range = "0%-49%";
+                    else if (average < 60) range = "50%-59%";
+                    else if (average < 70) range = "60%-69%";
+                    else if (average < 80) range = "70%-79%";
+                    else if (average < 90) range = "80%-89%";
+                    else if (average <= 100) range = "90%-100%";
+                    else
+                        throw new Error(
+                            "Unnatural average calculated: " + average
+                        );
+
+                    const resultItem = results.find(
+                        (r) => r.percentage === range
+                    );
+                    if (resultItem) {
+                        resultItem.data += 1;
+                    }
                 }
             }
         }
@@ -254,8 +282,6 @@ const getTotalStudents = async (req, res) => {
     }
 };
 
-
-
 module.exports = {
     createUser,
     deleteUser,
@@ -264,5 +290,5 @@ module.exports = {
     getAllUsers,
     downloadUsers,
     getAverageScoreDistribution,
-    getTotalStudents
+    getTotalStudents,
 };
