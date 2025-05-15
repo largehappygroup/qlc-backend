@@ -7,16 +7,19 @@ const ChapterAssignment = require("../models/ChapterAssignment.js");
  * @returns - response object with updated status
  */
 const createChapter = async (req, res) => {
-    const { assignments, learningObjectives, title } = req.body;
+    const { assignments, learningObjectives, title, description, releaseDate } =
+        req.body;
 
     try {
-        if (learningObjectives && title) {
+        if (learningObjectives && title && description && releaseDate) {
             const order =
                 (await Chapter.countDocuments({}, { hint: "_id_" })) + 1;
             const chapter = new Chapter({
                 order,
                 learningObjectives,
                 title,
+                description,
+                releaseDate,
             });
             await chapter.save();
 
@@ -101,7 +104,14 @@ const deleteChapter = async (req, res) => {
  */
 const editChapter = async (req, res) => {
     const id = req.params?.id;
-    const { title, order, assignments, learningObjectives } = req.body;
+    const {
+        title,
+        order,
+        assignments,
+        learningObjectives,
+        description,
+        releaseDate,
+    } = req.body;
 
     try {
         if (id) {
@@ -114,7 +124,9 @@ const editChapter = async (req, res) => {
             chapter.title = title;
             chapter.learningObjectives = learningObjectives;
             chapter.order = order;
-            
+            chapter.description = description;
+            chapter.releaseDate = releaseDate;
+
             if (assignments) {
                 const newAssignmentIds = [];
 
@@ -223,11 +235,17 @@ const getChapter = async (req, res) => {
  * @returns - response details (with status)
  */
 const getAllChapters = async (req, res) => {
-    const { order } = req.query;
+    const { order, date } = req.query;
     try {
         let filter = {};
         if (order) {
             filter.order = Number(order);
+        }
+
+        if (date) {
+            filter.releaseDate = {
+                $lt: new Date(date),
+            };
         }
         const chapters = await Chapter.find(filter);
         return res.status(200).json(chapters);
