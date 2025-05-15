@@ -347,7 +347,7 @@ const checkQuestion = async (req, res) => {
 const getAverageScore = async (req, res) => {
     const { userId } = req.query;
     try {
-        let filter = {};
+        let filter = {status: "Complete"};
 
         if (userId) {
             filter.userId = ObjectId.createFromHexString(userId);
@@ -376,7 +376,7 @@ const getAverageScore = async (req, res) => {
 const getAverageTimeSpent = async (req, res) => {
     const { userId } = req.query;
     try {
-        let filter = {};
+        let filter = {status: "Complete"};
 
         if (userId) {
             filter.userId = ObjectId.createFromHexString(userId);
