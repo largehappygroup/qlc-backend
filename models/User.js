@@ -30,6 +30,20 @@ const UserSchema = new Schema({
         required: true,
         enum: ["admin", "faculty", "ta", "student"],
     },
+    termSeason: { // required for students
+        type: String,
+        enum: ["Spring", "Summer", "Fall"]
+    },
+    termYear: { // required for students
+        type: Number,
+    },
+    studyParticipation: { // required for students
+        type: Boolean,
+    },
+    studyGroup: {
+        type: String,
+        enum: ["A", "B"] // A means receive own things, B means receive other people's
+    }
 });
 
 module.exports = User = mongoose.model("user", UserSchema);

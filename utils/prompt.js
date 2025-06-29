@@ -8,7 +8,7 @@ const ChapterAssignment = require("../models/ChapterAssignment.js");
  * @returns {Promise<string>} A formatted string containing the combined chapter and assignment details.
  * @throws {Error} Throws an error if the assignment or chapter cannot be found.
  */
-const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
+const fetchAssignmentAndChapterDetails = async (assignmentId) => {
 
   // Assignment details
   try {
@@ -111,7 +111,7 @@ const studentCode = () => {
 const questionGenerationPrompt = async (assignmentId) => {
   return `
     Context: 
-    ${await fetchAssignmentAndChaptertDetails(assignmentId)}
+    ${await fetchAssignmentAndChapterDetails(assignmentId)}
     
     Students' code:
     ${studentCode()}
