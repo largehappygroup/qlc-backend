@@ -2,10 +2,10 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/database.js");
 
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 5704;
 const app = express();
 
-app.use(cors({ origin: process.env.FRONT_END }));
+app.use(cors({ origin: process.env.FRONT_END || "*" }));
 app.use(express.json());
 
 connectDB();
