@@ -149,8 +149,13 @@ const getAllUsers = async (req, res) => {
  * @returns - response details (with status)
  */
 const downloadUsers = async (req, res) => {
+    const { role } = req.query;
     try {
-        const users = await User.find().lean();
+        let filter = {};
+        if (role) {
+            filter.role = new RegExp(role, "i");
+        }
+        const users = await User.find(filter).lean();
         const opts = {
             transforms: [
                 flatten({ object: true, array: true, separator: "|" }),
@@ -170,33 +175,45 @@ const downloadUsers = async (req, res) => {
     }
 };
 
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 const getAverageScoreDistribution = async (req, res) => {
     const { userId } = req.query;
     try {
         let results = [
             {
-                percentage: "0%-49%",
+                percentage: "0-49",
                 data: 0,
+                color: "red",
             },
             {
-                percentage: "50%-59%",
+                percentage: "50-59",
                 data: 0,
+                color: "purple",
             },
             {
-                percentage: "60%-69%",
+                percentage: "60-69",
                 data: 0,
+                color: "orange",
             },
             {
-                percentage: "70%-79%",
+                percentage: "70-79",
                 data: 0,
+                color: "yellow",
             },
             {
-                percentage: "80%-89%",
+                percentage: "80-89",
                 data: 0,
+                color: "blue",
             },
             {
-                percentage: "90%-100%",
+                percentage: "90-100",
                 data: 0,
+                color: "green",
             },
         ];
         if (userId) {
@@ -208,12 +225,12 @@ const getAverageScoreDistribution = async (req, res) => {
                 const score =
                     (exercise.totalCorrect / exercise.questions.length) * 100;
                 let range = null;
-                if (score < 50) range = "0%-49%";
-                else if (score < 60) range = "50%-59%";
-                else if (score < 70) range = "60%-69%";
-                else if (score < 80) range = "70%-79%";
-                else if (score < 90) range = "80%-89%";
-                else if (score <= 100) range = "90%-100%";
+                if (score < 50) range = "0-49";
+                else if (score < 60) range = "50-59";
+                else if (score < 70) range = "60-69";
+                else if (score < 80) range = "70-79";
+                else if (score < 90) range = "80-89";
+                else if (score <= 100) range = "90-100";
                 else throw new Error("Unnatural average calculated: " + score);
 
                 const resultItem = results.find((r) => r.percentage === range);
@@ -240,12 +257,12 @@ const getAverageScoreDistribution = async (req, res) => {
                         }, 0) / userExercises.length;
 
                     let range = null;
-                    if (average < 50) range = "0%-49%";
-                    else if (average < 60) range = "50%-59%";
-                    else if (average < 70) range = "60%-69%";
-                    else if (average < 80) range = "70%-79%";
-                    else if (average < 90) range = "80%-89%";
-                    else if (average <= 100) range = "90%-100%";
+                    if (average < 50) range = "0-49";
+                    else if (average < 60) range = "50-59";
+                    else if (average < 70) range = "60-69";
+                    else if (average < 80) range = "70-79";
+                    else if (average < 90) range = "80-89";
+                    else if (average <= 100) range = "90-100";
                     else
                         throw new Error(
                             "Unnatural average calculated: " + average
@@ -270,10 +287,40 @@ const getAverageScoreDistribution = async (req, res) => {
     }
 };
 
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 const getTotalStudents = async (req, res) => {
     try {
         const students = await User.find({ role: "student" });
         return res.status(200).json(students.length);
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .send({ message: "Internal Server Error", error: err });
+    }
+};
+
+const assignGroups = async (req, res) => {
+    try {
+        const students = await User.find({ role: "student" });
+        for (const student of students) {
+            if (
+                student.studyParticipation &&
+                (!student.studyGroup ||
+                    student.studyGroup != "A" ||
+                    student.studyGroup != "B")
+            ) {
+                student.studyGroup =
+                    Math.floor(Math.random() * 2) == 1 ? "A" : "B";
+            }
+            student.save();
+        }
+        return res.status(200).send({ message: "Success." });
     } catch (err) {
         console.error(err);
         return res
@@ -291,4 +338,5 @@ module.exports = {
     downloadUsers,
     getAverageScoreDistribution,
     getTotalStudents,
+    assignGroups,
 };
