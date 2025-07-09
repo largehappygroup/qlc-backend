@@ -149,7 +149,7 @@ const getAllUsers = async (req, res) => {
  * @returns - response details (with status)
  */
 const downloadUsers = async (req, res) => {
-    const { role } = req.query;
+    const { role, fields } = req.query;
     try {
         let filter = {};
         if (role) {
@@ -160,6 +160,7 @@ const downloadUsers = async (req, res) => {
             transforms: [
                 flatten({ object: true, array: true, separator: "|" }),
             ],
+            fields: fields.split(","),
         };
 
         const parser = new Parser(opts);
