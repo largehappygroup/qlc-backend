@@ -346,6 +346,12 @@ const checkQuestion = async (req, res) => {
     }
 };
 
+/**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const getAverageScore = async (req, res) => {
     const { userId } = req.query;
     try {

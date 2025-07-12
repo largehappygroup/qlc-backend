@@ -289,7 +289,7 @@ const getAverageScoreDistribution = async (req, res) => {
 };
 
 /**
- *
+ * Gets the total number of students
  * @param {*} req
  * @param {*} res
  * @returns
@@ -298,6 +298,18 @@ const getTotalStudents = async (req, res) => {
     try {
         const students = await User.find({ role: "student" });
         return res.status(200).json(students.length);
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .send({ message: "Internal Server Error", error: err });
+    }
+};
+
+const uploadUsers = async (req, res) => {
+    try {
+        console.log(req.file);
+        return res.status(200).send(req.file);
     } catch (err) {
         console.error(err);
         return res
@@ -337,6 +349,7 @@ module.exports = {
     getUser,
     getAllUsers,
     downloadUsers,
+    uploadUsers,
     getAverageScoreDistribution,
     getTotalStudents,
     assignGroups,
