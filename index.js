@@ -3,9 +3,17 @@ const cors = require("cors");
 const connectDB = require("./config/database.js");
 
 const port = process.env.PORT || 5704;
+const allowedOrigin = process.env.FRONTEND_URL || "http://localhost:5703";
+
+const corsOptions = {
+    origin: allowedOrigin,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true,
+    optionsSuccessStatus: 200,
+};
 const app = express();
 
-app.use(cors({ origin: process.env.FRONT_END || "*" }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 connectDB();
