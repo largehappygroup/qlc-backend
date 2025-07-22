@@ -1,5 +1,7 @@
 const User = require("../models/User.js");
 const Exercise = require("../models/Exercise.js");
+const fs = require("fs");
+const csvParser = require("csv-parser");
 const { Parser } = require("json2csv");
 const { flatten } = require("@json2csv/transforms");
 
@@ -16,13 +18,24 @@ const createUser = async (req, res) => {
     const { firstName, lastName, vuNetId, email, role } = req.body;
     try {
         if (firstName && lastName && vuNetId && email && role) {
-            const user = new User({
-                firstName,
-                lastName,
-                vuNetId,
-                email,
-                role,
-            });
+            let user = await User.findOne({ vuNetId });
+            if (user) {
+                Object.assign(user, {
+                    firstName,
+                    lastName,
+                    vuNetId,
+                    email,
+                    role,
+                });
+            } else {
+                user = new User({
+                    firstName,
+                    lastName,
+                    vuNetId,
+                    email,
+                    role,
+                });
+            }
 
             await user.save();
 
@@ -308,8 +321,30 @@ const getTotalStudents = async (req, res) => {
 
 const uploadUsers = async (req, res) => {
     try {
-        console.log(req.file);
-        return res.status(200).send(req.file);
+        let columns = [];
+        fs.createReadStream(req.file.destination + "/" + req.file.filename)
+            .pipe(csvParser())
+            .on("headers", (headers) => {
+                columns = headers;
+                const vuNetIdIndex = columns.indexOf("vuNetId");
+                if (vuNetIdIndex == -1) {
+                    return res.status(400).send({
+                        message:
+                            'File is missing the required "vuNetId" field. Please ensure this column heading is spelled correctly.',
+                    });
+                }
+            })
+            .on("data", async (row) => {
+                let user = await User.findOne({ vuNetId: row["vuNetId"] });
+                if (!user) {
+                    user = new User(row);
+                } else {
+                    Object.assign(user, row);
+                }
+                console.log(user);
+                //await user.save();
+            });
+        return res.status(200).send({ message: "Success" });
     } catch (err) {
         console.error(err);
         return res
