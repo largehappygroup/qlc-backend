@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
 
 const {
     createUser,
@@ -7,12 +8,16 @@ const {
     editUser,
     getAllUsers,
     downloadUsers,
+    uploadUsers,
     getUser,
     getAverageScoreDistribution,
     getTotalStudents,
 } = require("../controllers/users.controller.js");
 
+const upload = multer({dest: "./uploads"});
+
 router.post("/", createUser);
+router.post("/upload", upload.single("file"), uploadUsers)
 router.put("/:id", editUser);
 router.get("/download", downloadUsers);
 router.get("/total-students", getTotalStudents);
