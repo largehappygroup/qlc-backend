@@ -23,7 +23,11 @@ app.use("/chapters", require("./routes/chapters.router.js"));
 app.use("/exercises", require("./routes/exercises.router.js"));
 app.use("/users", require("./routes/users.router.js"));
 app.get("/", (req, res) => {
-    res.send("Ello :D");
+    const remoteUser = req.headers["remote-user"];
+    const givenName = req.headers["remote-user-given-name"];
+    const familyName = req.headers["remote-user-family-name"];
+    const vunetid = req.headers["remote-user-vunetid"];
+    res.send(`Hello, ${givenName} ${familyName} (${vunetid})! Your remote user is ${remoteUser}.`);
 });
 
 app.listen(port, () => {
