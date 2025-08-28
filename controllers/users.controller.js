@@ -43,7 +43,7 @@ const createUser = async (req, res) => {
 
             await user.save(); 
 
-            return res.status(200).json({remoteUser, givenName, familyName, vunetid});
+            return res.status(200).json(user);
         } else {
             return res
                 .status(400)
