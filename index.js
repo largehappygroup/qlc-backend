@@ -27,7 +27,7 @@ app.get("/", (req, res) => {
     const givenName = req.headers["remote-user-given-name"];
     const familyName = req.headers["remote-user-family-name"];
     const vunetid = req.headers["remote-user-vunetid"];
-    res.send(`Hello, ${givenName} ${familyName} (${vunetid})! Your remote user is ${remoteUser}.`);
+    res.send(`Hello, ${givenName} ${familyName} (${vunetid})! ${JSON.stringify(req.headers)}Your remote user is ${remoteUser}.`);
 });
 
 app.listen(port, () => {
