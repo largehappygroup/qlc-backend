@@ -15,9 +15,7 @@ const { ObjectId } = mongoose.Types;
  * @returns - response details (with status)
  */
 const createUser = async (req, res) => {
-    const { firstName, lastName, vuNetId, email, role } = req.body;
     try {
-
         const remoteUser = req.headers['remote-user'];
         const givenName = req.headers['remote-user-given-name'];
         const familyName = req.headers['remote-user-family-name'];
