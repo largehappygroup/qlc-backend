@@ -16,11 +16,12 @@ const { ObjectId } = mongoose.Types;
  */
 const createUser = async (req, res) => {
     try {
-        const remoteUser = req.headers['remote-user'];
-        const givenName = req.headers['remote-user-given-name'];
-        const familyName = req.headers['remote-user-family-name'];
-        const vunetid = req.headers['remote-user-vunetid'];
-        /*if (firstName && lastName && vuNetId && email && role) {
+        const email= req.headers['remote-user'];
+        const firstName = req.headers['remote-user-given-name'];
+        const lastName = req.headers['remote-user-family-name'];
+        const vuNetId = req.headers['remote-user-vunetid'];
+        const role = req.body.role || "student";
+        if (firstName && lastName && vuNetId && email && role) {
             let user = await User.findOne({ vuNetId });
             if (user) {
                 Object.assign(user, {
@@ -40,14 +41,14 @@ const createUser = async (req, res) => {
                 });
             }
 
-            await user.save(); */
+            await user.save(); 
 
             return res.status(200).json({remoteUser, givenName, familyName, vunetid});
-        /*} else {
+        } else {
             return res
                 .status(400)
                 .send({ message: "Missing at least one required field." });
-        }*/
+        }
     } catch (err) {
         console.error(err.message);
         return res.status(500).send({

@@ -16,8 +16,8 @@ const {
 
 const upload = multer({dest: "./uploads"});
 
-router.post("/", createUser);
 router.post("/upload", upload.single("file"), uploadUsers)
+router.post("/", createUser);
 router.put("/:id", editUser);
 router.get("/download", downloadUsers);
 router.get("/total-students", getTotalStudents);
