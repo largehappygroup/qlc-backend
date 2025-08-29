@@ -15,7 +15,6 @@ const { ObjectId } = mongoose.Types;
  * @returns - response details (with status)
  */
 const createUser = async (req, res) => {
-    console.log("Creating user...");
     try {
         const email = req.headers["remote-user"];
         const firstName = req.headers["remote-user-given-name"];
@@ -26,6 +25,7 @@ const createUser = async (req, res) => {
             let user = await User.findOne({ vuNetId });
             if (user) {
                 Object.assign(user, {
+                    _id: user._id,
                     firstName,
                     lastName,
                     vuNetId,
@@ -34,6 +34,7 @@ const createUser = async (req, res) => {
                 });
             } else {
                 user = new User({
+                    _id: new ObjectId(),
                     firstName,
                     lastName,
                     vuNetId,
