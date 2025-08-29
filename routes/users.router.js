@@ -14,9 +14,9 @@ const {
     getTotalStudents,
 } = require("../controllers/users.controller.js");
 
-const upload = multer({dest: "./uploads"});
+const upload = multer({ dest: "./uploads" });
 
-router.post("/upload", upload.single("file"), uploadUsers)
+router.post("/upload", upload.single("file"), uploadUsers);
 router.post("/", createUser);
 router.put("/:id", editUser);
 router.get("/download", downloadUsers);

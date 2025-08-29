@@ -15,11 +15,12 @@ const { ObjectId } = mongoose.Types;
  * @returns - response details (with status)
  */
 const createUser = async (req, res) => {
+    console.log("Creating user...");
     try {
-        const email= req.headers['remote-user'];
-        const firstName = req.headers['remote-user-given-name'];
-        const lastName = req.headers['remote-user-family-name'];
-        const vuNetId = req.headers['remote-user-vunetid'];
+        const email = req.headers["remote-user"];
+        const firstName = req.headers["remote-user-given-name"];
+        const lastName = req.headers["remote-user-family-name"];
+        const vuNetId = req.headers["remote-user-vunetid"];
         const role = req.body.role || "student";
         if (firstName && lastName && vuNetId && email && role) {
             let user = await User.findOne({ vuNetId });
@@ -41,7 +42,7 @@ const createUser = async (req, res) => {
                 });
             }
 
-            await user.save(); 
+            await user.save();
 
             return res.status(200).json(user);
         } else {
