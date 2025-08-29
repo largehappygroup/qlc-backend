@@ -25,6 +25,7 @@ const createUser = async (req, res) => {
             let user = await User.findOne({ vuNetId });
             if (user) {
                 Object.assign(user, {
+                    _id: user._id,
                     firstName,
                     lastName,
                     vuNetId,
