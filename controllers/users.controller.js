@@ -23,16 +23,7 @@ const createUser = async (req, res) => {
         const role = req.body.role || "student";
         if (firstName && lastName && vuNetId && email && role) {
             let user = await User.findOne({ vuNetId });
-            if (user) {
-                Object.assign(user, {
-                    _id: user._id,
-                    firstName,
-                    lastName,
-                    vuNetId,
-                    email,
-                    role,
-                });
-            } else {
+            if (!user) {
                 user = new User({
                     _id: new ObjectId(),
                     firstName,
@@ -41,9 +32,8 @@ const createUser = async (req, res) => {
                     email,
                     role,
                 });
+                await user.save();
             }
-
-            await user.save();
 
             return res.status(200).json(user);
         } else {
