@@ -186,10 +186,10 @@ const downloadUsers = async (req, res) => {
 };
 
 /**
- *
- * @param {*} req
- * @param {*} res
- * @returns
+ * Gets the distribution of average scores across all students or a specific student if userId is provided
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
  */
 const getAverageScoreDistribution = async (req, res) => {
     const { userId } = req.query;
@@ -315,6 +315,12 @@ const getTotalStudents = async (req, res) => {
     }
 };
 
+/**
+ * allows a csv of users to be uploaded
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const uploadUsers = async (req, res) => {
     try {
         let columns = [];
@@ -338,7 +344,7 @@ const uploadUsers = async (req, res) => {
                     Object.assign(user, row);
                 }
                 console.log(user);
-                //await user.save();
+                await user.save();
             });
         return res.status(200).send({ message: "Success" });
     } catch (err) {
@@ -349,6 +355,12 @@ const uploadUsers = async (req, res) => {
     }
 };
 
+/**
+ * assigns students to group A or B randomly if they are participating in the study and not already assigned
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const assignGroups = async (req, res) => {
     try {
         const students = await User.find({ role: "student" });
