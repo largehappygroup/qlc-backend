@@ -1,5 +1,7 @@
 const User = require("../models/User.js");
 const Exercise = require("../models/Exercise.js");
+const fs = require("fs");
+const csvParser = require("csv-parser");
 const { Parser } = require("json2csv");
 const { flatten } = require("@json2csv/transforms");
 
@@ -13,18 +15,25 @@ const { ObjectId } = mongoose.Types;
  * @returns - response details (with status)
  */
 const createUser = async (req, res) => {
-    const { firstName, lastName, vuNetId, email, role } = req.body;
     try {
+        const email = req.headers["remote-user"];
+        const firstName = req.headers["remote-user-given-name"];
+        const lastName = req.headers["remote-user-family-name"];
+        const vuNetId = req.headers["remote-user-vunetid"];
+        const role = req.body.role || "student";
         if (firstName && lastName && vuNetId && email && role) {
-            const user = new User({
-                firstName,
-                lastName,
-                vuNetId,
-                email,
-                role,
-            });
-
-            await user.save();
+            let user = await User.findOne({ vuNetId });
+            if (!user) {
+                user = new User({
+                    _id: new ObjectId(),
+                    firstName,
+                    lastName,
+                    vuNetId,
+                    email,
+                    role,
+                });
+                await user.save();
+            }
 
             return res.status(200).json(user);
         } else {
@@ -177,10 +186,10 @@ const downloadUsers = async (req, res) => {
 };
 
 /**
- *
- * @param {*} req
- * @param {*} res
- * @returns
+ * Gets the distribution of average scores across all students or a specific student if userId is provided
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
  */
 const getAverageScoreDistribution = async (req, res) => {
     const { userId } = req.query;
@@ -306,10 +315,38 @@ const getTotalStudents = async (req, res) => {
     }
 };
 
+/**
+ * allows a csv of users to be uploaded
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const uploadUsers = async (req, res) => {
     try {
-        console.log(req.file);
-        return res.status(200).send(req.file);
+        let columns = [];
+        fs.createReadStream(req.file.destination + "/" + req.file.filename)
+            .pipe(csvParser())
+            .on("headers", (headers) => {
+                columns = headers;
+                const vuNetIdIndex = columns.indexOf("vuNetId");
+                if (vuNetIdIndex == -1) {
+                    return res.status(400).send({
+                        message:
+                            'File is missing the required "vuNetId" field. Please ensure this column heading is spelled correctly.',
+                    });
+                }
+            })
+            .on("data", async (row) => {
+                let user = await User.findOne({ vuNetId: row["vuNetId"] });
+                if (!user) {
+                    user = new User(row);
+                } else {
+                    Object.assign(user, row);
+                }
+                console.log(user);
+                await user.save();
+            });
+        return res.status(200).send({ message: "Success" });
     } catch (err) {
         console.error(err);
         return res
@@ -318,6 +355,12 @@ const uploadUsers = async (req, res) => {
     }
 };
 
+/**
+ * assigns students to group A or B randomly if they are participating in the study and not already assigned
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const assignGroups = async (req, res) => {
     try {
         const students = await User.find({ role: "student" });

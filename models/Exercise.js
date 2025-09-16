@@ -28,6 +28,10 @@ const ExerciseSchema = new Schema({
                 type: ObjectId, // mongodb generated unique id for the question in the exercise
                 required: true,
             },
+            flagged: {
+                type: Boolean,
+                required: true,
+            },
             query: {
                 type: String, // prompt/question for the exercise
                 required: true,
@@ -73,7 +77,7 @@ const ExerciseSchema = new Schema({
             },
             correct: {
                 type: Boolean, // whether the user got the answer correct the first time
-            }
+            },
         },
     ],
     status: {

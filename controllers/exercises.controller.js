@@ -282,7 +282,7 @@ const downloadExercises = async (req, res) => {
 const checkQuestion = async (req, res) => {
     const id = req.params?.id; // exercise id
     const { questionId } = req.query;
-    const { userAnswer, timeSpent } = req.body;
+    const { userAnswer, timeSpent, flagged } = req.body;
     try {
         if (id) {
             const exercise = await Exercise.findById(id);
@@ -321,6 +321,7 @@ const checkQuestion = async (req, res) => {
             }
 
             question.timeSpent = timeSpent;
+            question.flagged = flagged;
 
             question.userAnswers = [
                 ...question.userAnswers,
@@ -347,10 +348,10 @@ const checkQuestion = async (req, res) => {
 };
 
 /**
- * 
- * @param {*} req 
- * @param {*} res 
- * @returns 
+ *
+ * @param {*} req
+ * @param {*} res
+ * @returns
  */
 const getAverageScore = async (req, res) => {
     const { userId } = req.query;
