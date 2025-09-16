@@ -252,6 +252,8 @@ const getAllExercises = async (req, res) => {
 };
 
 const downloadExercises = async (req, res) => {
+    const { fields } = req.query;
+
     try {
         const exercises = await Exercise.find().lean();
         const opts = {
@@ -262,10 +264,10 @@ const downloadExercises = async (req, res) => {
                 }),
                 flatten({ object: true, array: true, separator: "|" }),
             ],
+            fields: fields.split(","),
         };
         const parser = new Parser(opts);
         const csv = parser.parse(exercises);
-        console.log(csv);
         res.header("Content-Type", "text/csv");
         res.attachment("exercises.csv");
         return res.status(200).send(csv);
@@ -344,10 +346,16 @@ const checkQuestion = async (req, res) => {
     }
 };
 
+/**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
 const getAverageScore = async (req, res) => {
     const { userId } = req.query;
     try {
-        let filter = {status: "Complete"};
+        let filter = { status: "Complete" };
 
         if (userId) {
             filter.userId = ObjectId.createFromHexString(userId);
@@ -376,7 +384,7 @@ const getAverageScore = async (req, res) => {
 const getAverageTimeSpent = async (req, res) => {
     const { userId } = req.query;
     try {
-        let filter = {status: "Complete"};
+        let filter = { status: "Complete" };
 
         if (userId) {
             filter.userId = ObjectId.createFromHexString(userId);
@@ -390,7 +398,6 @@ const getAverageTimeSpent = async (req, res) => {
                 }, 0) / exercises.length;
 
             const asDate = new Date(timeSpent * 1000);
-            console.log(timeSpent);
             const format =
                 asDate.getUTCHours().toString().padStart(2, "0") +
                 ":" +

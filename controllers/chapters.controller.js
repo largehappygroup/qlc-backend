@@ -120,12 +120,11 @@ const editChapter = async (req, res) => {
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
             }
-
             chapter.title = title;
             chapter.learningObjectives = learningObjectives;
             chapter.order = order;
             chapter.description = description;
-            chapter.releaseDate = releaseDate;
+            chapter.releaseDate = new Date(releaseDate);
 
             if (assignments) {
                 const newAssignmentIds = [];

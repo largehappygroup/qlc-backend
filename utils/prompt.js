@@ -151,7 +151,7 @@ const studentCode = () => {
 const questionGenerationPrompt = async (assignmentId) => {
   return `
     Context: 
-    ${await fetchAssignmentAndChaptertDetails(assignmentId)}
+    ${await fetchAssignmentAndChapterDetails(assignmentId)}
     
     Students' code:
     ${studentCode()}
