@@ -67,8 +67,8 @@ const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
 const systemPrompt = () => {
   const incorrectAnswers = 3;
   const maxNumberOfHints = 3;
-  const category = "Create";
-  const numberOfQuestions = 3;
+  const category = "Apply";
+  const numberOfQuestions = 6;
   const questionType = ["multiple-choice", "coding"][0]; // only dealing with MCQs at the moment
 
   const categoryInfo = categories[category];
@@ -131,6 +131,7 @@ Each object in the array must follow this exact structure:
 };
 
 // logic for getting students' code from AutoGrader
+// Dummy code at the momment
 const studentCode = () => {
   return `
     function calculateTotal(prices) {
@@ -148,7 +149,7 @@ const studentCode = () => {
  * @param {string} assignmentId - The ID of the assignment to generate the prompt for.
  * @returns {Promise<string>} The complete prompt string ready to be sent to the AI.
  */
-const questionGenerationPrompt = async (assignmentId) => {
+const userPrompt = async (assignmentId) => {
   return `
     Context: 
     ${await fetchAssignmentAndChapterDetails(assignmentId)}
@@ -159,6 +160,6 @@ const questionGenerationPrompt = async (assignmentId) => {
 };
 
 module.exports = {
-  questionGenerationPrompt,
+  userPrompt,
   systemPrompt,
 };
