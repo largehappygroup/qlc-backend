@@ -4,6 +4,8 @@ const User = require("../models/User.js");
 const mongoose = require("mongoose");
 const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
+const { generateQuestions } = require("../services/questionGeneration.js");
+const { questionGenerationPrompt } = require("../utils/prompt.js");
 const { ObjectId } = mongoose.Types;
 
 /**
@@ -13,23 +15,19 @@ const { ObjectId } = mongoose.Types;
  * @returns - response details (with status)
  */
 const createExercise = async (req, res) => {
-    const { userId } = req.query;
+    const { userId, assignmentId } = req.query;
     try {
-        if (userId) {
-            const date = new Date();
-
+        if (userId && assignmentId) {
             const search = await Exercise.findOne({
-                date: {
-                    $gte: new Date(date.setHours(0, 0, 0, 0)), // Start date
-                    $lte: new Date(date.setHours(23, 59, 59, 999)), // End date
-                },
+                userId: ObjectId.createFromHexString(userId),
+                assignmentId: ObjectId.createFromHexString(assignmentId),
             });
 
             if (search) {
                 return res.status(201).json(search);
             }
-
-            const questions = [];
+            const prompt = questionGenerationPrompt(assignmentId);
+            const questions = generateQuestions();
             const exercise = new Exercise({
                 _id: new ObjectId(),
                 date,
