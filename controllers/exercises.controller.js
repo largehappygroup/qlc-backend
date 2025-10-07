@@ -240,7 +240,7 @@ const getAllExercises = async (req, res) => {
                 exercises[j].questions[i] = filteredQuestion;
             }
         }
-
+        console.log(exercises);
         return res.status(200).json(exercises);
     } catch (err) {
         console.error(err.message);
