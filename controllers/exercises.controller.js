@@ -180,12 +180,33 @@ const getAllExercises = async (req, res) => {
     try {
         let filter = {};
 
+        // Helper to check valid ObjectId
+        const isValidObjectId = (id) => {
+            return (
+                typeof id === "string" &&
+                id.length === 24 &&
+                /^[a-fA-F0-9]+$/.test(id)
+            );
+        };
+
         if (userId) {
-            filter.userId = ObjectId.createFromHexString(userId);
+            if (isValidObjectId(userId)) {
+                filter.userId = new ObjectId(userId);
+            } else {
+                return res
+                    .status(400)
+                    .send({ message: "Invalid userId format." });
+            }
         }
 
         if (assignmentId) {
-            filter.assignmentId = ObjectId.createFromHexString(assignmentId);
+            if (isValidObjectId(assignmentId)) {
+                filter.assignmentId = new ObjectId(assignmentId);
+            } else {
+                return res
+                    .status(400)
+                    .send({ message: "Invalid assignmentId format." });
+            }
         }
 
         if (date) {
@@ -208,12 +229,11 @@ const getAllExercises = async (req, res) => {
             }
         }
 
-        console.log(filter);
+        console.log("Exercise filter:", filter);
         const exercises = await Exercise.find(filter).lean();
 
         for (let j = 0; j < exercises.length; j++) {
             const exercise = exercises[j];
-
             for (let i = 0; i < exercise.questions.length; i++) {
                 const question = exercise.questions[i];
                 let availableAnswers = [
@@ -241,7 +261,7 @@ const getAllExercises = async (req, res) => {
                 exercises[j].questions[i] = filteredQuestion;
             }
         }
-        console.log(exercises);
+        console.log("Exercises found:", exercises);
         return res.status(200).json(exercises);
     } catch (err) {
         console.error(err.message);
@@ -251,93 +271,6 @@ const getAllExercises = async (req, res) => {
         });
     }
 };
-        const { userId, date, month, year, assignmentId } = req.query;
-        try {
-            let filter = {};
-
-            // Helper to check valid ObjectId
-            const isValidObjectId = (id) => {
-                return typeof id === "string" && id.length === 24 && /^[a-fA-F0-9]+$/.test(id);
-            };
-
-            if (userId) {
-                if (isValidObjectId(userId)) {
-                    filter.userId = new ObjectId(userId);
-                } else {
-                    return res.status(400).send({ message: "Invalid userId format." });
-                }
-            }
-
-            if (assignmentId) {
-                if (isValidObjectId(assignmentId)) {
-                    filter.assignmentId = new ObjectId(assignmentId);
-                } else {
-                    return res.status(400).send({ message: "Invalid assignmentId format." });
-                }
-            }
-
-            if (date) {
-                const startOfDay = new Date(date);
-                startOfDay.setHours(0, 0, 0, 0);
-
-                const endOfDay = new Date(date);
-                endOfDay.setHours(23, 59, 59, 999);
-
-                filter.date = { $gte: startOfDay, $lte: endOfDay };
-            } else if (month && year) {
-                const startOfMonth = new Date(year, month, 1);
-                const today = new Date();
-                if (Number(month) === today.getMonth()) {
-                    today.setHours(-1, 59, 59, 999);
-                    filter.date = { $gte: startOfMonth, $lte: today };
-                } else {
-                    const endOfMonth = new Date(year, Number(month) + 1, 0);
-                    filter.date = { $gte: startOfMonth, $lte: endOfMonth };
-                }
-            }
-
-            console.log("Exercise filter:", filter);
-            const exercises = await Exercise.find(filter).lean();
-
-            for (let j = 0; j < exercises.length; j++) {
-                const exercise = exercises[j];
-                for (let i = 0; i < exercise.questions.length; i++) {
-                    const question = exercise.questions[i];
-                    let availableAnswers = [
-                        question.correctAnswer,
-                        ...question.otherAnswers,
-                    ]
-                        .map((value) => ({ value, sort: Math.random() }))
-                        .sort((a, b) => a.sort - b.sort)
-                        .map(({ value }) => value);
-
-                    const filteredQuestion = {
-                        _id: question._id,
-                        query: question.query,
-                        type: question.type,
-                        hints: question.hints,
-                        topics: question.topics,
-                        difficulty: question.difficulty,
-                        explanation: question.explanation,
-                        availableAnswers,
-                        userAnswers: question.userAnswers,
-                        timeSpent: question.timeSpent,
-                        correct: question.correct,
-                    };
-
-                    exercises[j].questions[i] = filteredQuestion;
-                }
-            }
-            console.log("Exercises found:", exercises);
-            return res.status(200).json(exercises);
-        } catch (err) {
-            console.error(err.message);
-            return res.status(500).send({
-                message: "Issue with retrieving all exercises.",
-                error: err.message,
-            });
-        }
-
 const downloadExercises = async (req, res) => {
     const { fields } = req.query;
 
