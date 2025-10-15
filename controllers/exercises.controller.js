@@ -180,33 +180,12 @@ const getAllExercises = async (req, res) => {
     try {
         let filter = {};
 
-        // Helper to check valid ObjectId
-        const isValidObjectId = (id) => {
-            return (
-                typeof id === "string" &&
-                id.length === 24 &&
-                /^[a-fA-F0-9]+$/.test(id)
-            );
-        };
-
         if (userId) {
-            if (isValidObjectId(userId)) {
-                filter.userId = new ObjectId(userId);
-            } else {
-                return res
-                    .status(400)
-                    .send({ message: "Invalid userId format." });
-            }
+            filter.userId = ObjectId.createFromHexString(userId);
         }
 
         if (assignmentId) {
-            if (isValidObjectId(assignmentId)) {
-                filter.assignmentId = new ObjectId(assignmentId);
-            } else {
-                return res
-                    .status(400)
-                    .send({ message: "Invalid assignmentId format." });
-            }
+            filter.assignmentId = ObjectId.createFromHexString(assignmentId);
         }
 
         if (date) {
@@ -229,11 +208,11 @@ const getAllExercises = async (req, res) => {
             }
         }
 
-        console.log("Exercise filter:", filter);
         const exercises = await Exercise.find(filter).lean();
 
         for (let j = 0; j < exercises.length; j++) {
             const exercise = exercises[j];
+
             for (let i = 0; i < exercise.questions.length; i++) {
                 const question = exercise.questions[i];
                 let availableAnswers = [
@@ -261,7 +240,7 @@ const getAllExercises = async (req, res) => {
                 exercises[j].questions[i] = filteredQuestion;
             }
         }
-        console.log("Exercises found:", exercises);
+        console.log(filter)
         return res.status(200).json(exercises);
     } catch (err) {
         console.error(err.message);
@@ -271,6 +250,7 @@ const getAllExercises = async (req, res) => {
         });
     }
 };
+
 const downloadExercises = async (req, res) => {
     const { fields } = req.query;
 
@@ -302,7 +282,7 @@ const downloadExercises = async (req, res) => {
 const checkQuestion = async (req, res) => {
     const id = req.params?.id; // exercise id
     const { questionId } = req.query;
-    const { userAnswer, timeSpent, flagged } = req.body;
+    const { userAnswer, timeSpent, ratings } = req.body;
     try {
         if (id) {
             const exercise = await Exercise.findById(id);
@@ -341,7 +321,7 @@ const checkQuestion = async (req, res) => {
             }
 
             question.timeSpent = timeSpent;
-            question.flagged = flagged;
+            question.ratings = ratings;
 
             question.userAnswers = [
                 ...question.userAnswers,
