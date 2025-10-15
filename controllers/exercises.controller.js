@@ -240,7 +240,7 @@ const getAllExercises = async (req, res) => {
                 exercises[j].questions[i] = filteredQuestion;
             }
         }
-        console.log(filter)
+        console.log(filter);
         return res.status(200).json(exercises);
     } catch (err) {
         console.error(err.message);
@@ -276,6 +276,43 @@ const downloadExercises = async (req, res) => {
         return res
             .status(500)
             .send({ message: "Internal Server Error", error: err });
+    }
+};
+
+const submitRatings = async (req, res) => {
+    const exerciseId = req.params?.id;
+    const { questionId, ratings } = req.body;
+
+    try {
+        const exercise = await Exercise.findById(exerciseId);
+        if (!exercise) {
+            return res.status(404).send({ message: "Exercise not found." });
+        }
+
+        const question = exercise.questions.find((q) =>
+            ObjectId.createFromHexString(questionId).equals(q._id)
+        );
+        if (!question) {
+            return res.status(404).send({ message: "Question not found." });
+        }
+
+        if (question.ratings) {
+            question.ratings = { ...question.ratings, ...ratings };
+        } else {
+            question.ratings = ratings;
+        }
+
+        await exercise.save();
+
+        return res
+            .status(200)
+            .send({ message: "Ratings submitted successfully." });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({
+            message: "Issue with submitting ratings.",
+            error: err.message,
+        });
     }
 };
 
@@ -509,4 +546,5 @@ module.exports = {
     getAverageScore,
     getAverageTimeSpent,
     getRecentActivity,
+    submitRatings,
 };
