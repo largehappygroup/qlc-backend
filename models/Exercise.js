@@ -31,7 +31,7 @@ const ExerciseSchema = new Schema({
             ratings: {
                 type: Map,
                 of: Number,
-                required: true,
+                default: () => new Map(),
             },
             query: {
                 type: String, // prompt/question for the exercise

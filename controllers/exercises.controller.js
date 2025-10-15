@@ -282,7 +282,7 @@ const downloadExercises = async (req, res) => {
 const checkQuestion = async (req, res) => {
     const id = req.params?.id; // exercise id
     const { questionId } = req.query;
-    const { userAnswer, timeSpent, ratings } = req.body;
+    const { userAnswer, timeSpent, ratings = {} } = req.body;
     console.log(req.body);
     try {
         if (id) {
