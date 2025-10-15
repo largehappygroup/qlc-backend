@@ -296,8 +296,8 @@ const submitRatings = async (req, res) => {
             return res.status(404).send({ message: "Question not found." });
         }
 
-        if (question.ratings) {
-            question.ratings = { ...question.ratings, ...ratings };
+        if (ratings && typeof ratings === "object" && !(ratings instanceof Map)) {
+            question.ratings = new Map(Object.entries(ratings));
         } else {
             question.ratings = ratings;
         }
