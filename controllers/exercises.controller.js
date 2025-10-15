@@ -319,7 +319,7 @@ const submitRatings = async (req, res) => {
 const checkQuestion = async (req, res) => {
     const id = req.params?.id; // exercise id
     const { questionId } = req.query;
-    const { userAnswer, timeSpent, ratings } = req.body;
+    const { userAnswer, timeSpent } = req.body;
     console.log(req.body);
     try {
         if (id) {
@@ -359,7 +359,6 @@ const checkQuestion = async (req, res) => {
             }
 
             question.timeSpent = timeSpent;
-            question.ratings = ratings;
 
             question.userAnswers = [
                 ...question.userAnswers,
