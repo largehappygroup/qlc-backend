@@ -99,6 +99,10 @@ const processSubmissionsAndCreateCSV = async (
 };
 
 // --- RUN THE SCRIPT ---
-submissions = Array.from({ length: 5 }, () => helenSubmimssion[3]);
-
-processSubmissionsAndCreateCSV(submissions, systemPrompt(), [helenContext[3]]);
+submissions = Array.from({ length: 1 }, () => helenSubmimssion[4]);
+// console.log(submissions);
+processSubmissionsAndCreateCSV(
+  submissions,
+  systemPrompt("Predict the output"),
+  [helenContext[4]]
+);

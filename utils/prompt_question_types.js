@@ -61,16 +61,16 @@ const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
 };
 
 /**
- * Generates the system promp based on various question types.
+ * Generates the system prompt based on various question types.
+ * @param {string} questionType - The type of the question. Exact match with keys in question_types.json
  * @returns {string} A detailed instruction string, formatted and ready to be sent to the AI.
  */
-const systemPrompt = () => {
+const systemPrompt = (questionType) => {
   const incorrectAnswers = 3;
   const maxNumberOfHints = 3;
   const questionStructure = ["multiple-choice", "coding"][0]; // only dealing with MCQs at the moment
   const numberOfQuestions = 5;
 
-  const questionType = "Method Relationship: Direct Call";
   const questionTypeInfo = questionTypes[questionType];
 
   // Format the generation directives into a bulleted list string
@@ -128,14 +128,10 @@ const studentCode = () => {
 
 /**
  * Combines the contextual background with the student's code.
- * @param {string} assignmentId - The ID of the assignment to generate the prompt for.
  * @returns {Promise<string>} The complete prompt string ready to be sent to the AI.
  */
-const userPrompt = async (assignmentId) => {
-  return `
-    Context: 
-    ${await fetchAssignmentAndChapterDetails(assignmentId)}
-    
+const userPrompt = async () => {
+  return `    
     Students' code:
     ${studentCode()}
     `;
