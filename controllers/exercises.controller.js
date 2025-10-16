@@ -316,6 +316,12 @@ const submitRatings = async (req, res) => {
     }
 };
 
+/**
+ * checks the user's answer for a question in an exercise
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const checkQuestion = async (req, res) => {
     const id = req.params?.id; // exercise id
     const { questionId } = req.query;
@@ -385,10 +391,10 @@ const checkQuestion = async (req, res) => {
 };
 
 /**
- *
- * @param {*} req
- * @param {*} res
- * @returns
+ * gets the average score for all completed exercises, optionally filtered by userId
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
  */
 const getAverageScore = async (req, res) => {
     const { userId } = req.query;
@@ -419,6 +425,12 @@ const getAverageScore = async (req, res) => {
     }
 };
 
+/**
+ * gets the average time spent on all completed exercises, optionally filtered by userId
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const getAverageTimeSpent = async (req, res) => {
     const { userId } = req.query;
     try {
@@ -454,6 +466,12 @@ const getAverageTimeSpent = async (req, res) => {
     }
 };
 
+/**
+ * gets recent activity, optionally filtered by userId
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const getRecentActivity = async (req, res) => {
     const { userId } = req.query;
 
