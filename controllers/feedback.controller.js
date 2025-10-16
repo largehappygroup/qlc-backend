@@ -2,16 +2,48 @@ const Feedback = require("../models/Feedback");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 
+/**
+ * createFeedback creates a new feedback entry.
+ * @param {*} req - Express request object
+ * @param {*} res - Express response object
+ * @returns - JSON object with the created feedback entry or error message
+ */
 const createFeedback = async (req, res) => {
     try {
         const { userId, exerciseId } = req.params;
-        const { responses } = req.body;
+        const {
+            easeOfUnderstanding,
+            reasonableQuestions,
+            helpsUnderstandCode,
+            helpsUnderstandJava,
+            comments,
+        } = req.body;
+        const date = new Date();
+        const feedback = new Feedback({
+            userId: ObjectId(userId),
+            exerciseId: ObjectId(exerciseId),
+            date,
+            easeOfUnderstanding,
+            reasonableQuestions,
+            helpsUnderstandCode,
+            helpsUnderstandJava,
+            comments,
+        });
+
+        await feedback.save();
+        return res.status(201).json(feedback);
     } catch (error) {
         console.error("Error creating feedback:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
 
+/**
+ * downloadFeedback retrieves feedback entries for a specific user.
+ * @param {*} req - Express request object
+ * @param {*} res - Express response object
+ * @returns - JSON array of feedback entries or error message
+ */
 const downloadFeedback = async (req, res) => {
     try {
         const { userId } = req.params;
