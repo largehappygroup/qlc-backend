@@ -110,10 +110,11 @@
     ]
   },
   "Method Relationship: Direct Call": {
-    "definition": "This question type tests the student's ability to trace the immediate flow of execution from one method to another.",
+    "definition": "This question type tests the student's ability to trace the immediate flow of execution from one user-defined method to another.",
     "generation_directives": [
-      "Select a method from the student's code that makes a direct call to another method.",
-      "The correct answer must be the name of the method that is called.",
+      "Select a user-defined method from the student's code that makes a direct call to another user-defined method.",
+      "The correct answer must be *ClassName.methodName*, a user-defined method, that is called.",
+      "DO NOT ask questions whose correct answer is 'None'.",
       "The incorrect answers should be other method names from the students' code or generic method names.",
       "Every part of the generated output must be directly tied to the provided code submission."
     ],
@@ -144,6 +145,22 @@
       {
         "scenario": "The student's code contains the line double result = Math.pow(Math.sqrt(x * y), z);.",
         "question_example": "What is the innermost method call on the line that calculates the final value of result?"
+      }
+    ]
+  },
+  "Expression Evaluation": {
+    "definition": "This question type tests the student's understanding of arithmetic (`+`, `-`, `*`, `/`, `%`), relational (`>`, `<`, `==`), and logical (`&&`, `||`, `!`) operators.",
+    "generation_directives": [
+      "Identify an arithmetic, relational or boolean expression from the student's code.",
+      "Provide concrete, new input values for all required variables used in the expression. List the variables along with their new values.",
+      "The correct answer must be the single, correct result of the evaluation.",
+      "The incorrect answers must include incorrect outcomes based on common miscalculations (like operator precedence errors for arithmetic expressions or logical fallacies for boolean ones).",
+      "Every part of the generated output must be directly tied to the provided code submission."
+    ],
+    "examples": [
+      {
+        "scenario": "The student's code contains an if statement like `if (score > 80 && attendance >= 0.9)`.",
+        "question_example": "If the variable `score` is `85` and the variable `attendance` is `0.85`, what is the final boolean value of the expression `score > 80 && attendance >= 0.9`?"
       }
     ]
   }

@@ -70,7 +70,7 @@ const systemPrompt = () => {
   const questionStructure = ["multiple-choice", "coding"][0]; // only dealing with MCQs at the moment
   const numberOfQuestions = 5;
 
-  const questionType = "Execution Path Analysis";
+  const questionType = "Method Relationship: Direct Call";
   const questionTypeInfo = questionTypes[questionType];
 
   // Format the generation directives into a bulleted list string
@@ -91,7 +91,7 @@ ${directivesString}
 ### Output Instructions
 For each question you generate, you must provide the following in a structured format:
 
-1.  **A ${questionStructure} Question:** The question must be a "Predict the output" type and be directly related to the provided student's code.
+1.  **A ${questionStructure} Question:** The question must be a "${questionType}" type and be directly related to the provided student's code.
 2.  **Answer Options:** Provide one clearly correct answer and ${incorrectAnswers} plausible but incorrect answers.
 3.  **Explanation:** For the correct answer, provide a concise explanation of why it is correct, referencing the student's code if necessary.
 4.  **Hints:** You must provide ${maxNumberOfHints} hints. The first hint must explain why the first incorrect answer is wrong. The second hint must explain why the second incorrect answer is wrong, and the third hint must explain why the third incorrect answer is wrong. Make the hints objective statements.
@@ -141,7 +141,6 @@ const userPrompt = async (assignmentId) => {
     `;
 };
 
-console.log(systemPrompt());
 module.exports = {
   userPrompt,
   systemPrompt,
