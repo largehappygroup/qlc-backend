@@ -20,6 +20,7 @@ app.use(express.json());
 
 connectDB();
 
+app.use("//feedback", require("./routes/feedback.router.js"));
 app.use("//assignments", require("./routes/chapterassignments.router.js"));
 app.use("//chapters", require("./routes/chapters.router.js"));
 app.use("//exercises", require("./routes/exercises.router.js"));

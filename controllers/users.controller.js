@@ -231,6 +231,7 @@ const getAverageScoreDistribution = async (req, res) => {
                 userId: ObjectId.createFromHexString(userId),
                 status: "Complete",
             });
+            console.log("userExercises:", userExercises);
             for (const exercise of userExercises) {
                 const score =
                     (exercise.totalCorrect / exercise.questions.length) * 100;
