@@ -3,7 +3,7 @@
 
 # Dependency directory
 node_modules
-
+scripts
 # Editors
 .idea
 *.iml

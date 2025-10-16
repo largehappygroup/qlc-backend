@@ -238,7 +238,7 @@ const getAllExercises = async (req, res) => {
                 exercises[j].questions[i] = filteredQuestion;
             }
         }
-
+        console.log(filter);
         return res.status(200).json(exercises);
     } catch (err) {
         console.error(err.message);
@@ -277,10 +277,54 @@ const downloadExercises = async (req, res) => {
     }
 };
 
+const submitRatings = async (req, res) => {
+    const exerciseId = req.params?.id;
+    const { questionId, ratings } = req.body;
+
+    try {
+        const exercise = await Exercise.findById(exerciseId);
+        if (!exercise) {
+            return res.status(404).send({ message: "Exercise not found." });
+        }
+
+        const question = exercise.questions.find((q) =>
+            ObjectId.createFromHexString(questionId).equals(q._id)
+        );
+        if (!question) {
+            return res.status(404).send({ message: "Question not found." });
+        }
+
+        if (ratings && typeof ratings === "object" && !(ratings instanceof Map)) {
+            question.ratings = new Map(Object.entries(ratings));
+        } else {
+            question.ratings = ratings;
+        }
+
+        await exercise.save();
+
+        return res
+            .status(200)
+            .send({ message: "Ratings submitted successfully." });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({
+            message: "Issue with submitting ratings.",
+            error: err.message,
+        });
+    }
+};
+
+/**
+ * checks the user's answer for a question in an exercise
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const checkQuestion = async (req, res) => {
     const id = req.params?.id; // exercise id
     const { questionId } = req.query;
-    const { userAnswer, timeSpent, flagged } = req.body;
+    const { userAnswer, timeSpent } = req.body;
+    console.log(req.body);
     try {
         if (id) {
             const exercise = await Exercise.findById(id);
@@ -319,7 +363,6 @@ const checkQuestion = async (req, res) => {
             }
 
             question.timeSpent = timeSpent;
-            question.flagged = flagged;
 
             question.userAnswers = [
                 ...question.userAnswers,
@@ -346,10 +389,10 @@ const checkQuestion = async (req, res) => {
 };
 
 /**
- *
- * @param {*} req
- * @param {*} res
- * @returns
+ * gets the average score for all completed exercises, optionally filtered by userId
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
  */
 const getAverageScore = async (req, res) => {
     const { userId } = req.query;
@@ -380,6 +423,12 @@ const getAverageScore = async (req, res) => {
     }
 };
 
+/**
+ * gets the average time spent on all completed exercises, optionally filtered by userId
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const getAverageTimeSpent = async (req, res) => {
     const { userId } = req.query;
     try {
@@ -415,6 +464,12 @@ const getAverageTimeSpent = async (req, res) => {
     }
 };
 
+/**
+ * gets recent activity, optionally filtered by userId
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const getRecentActivity = async (req, res) => {
     const { userId } = req.query;
 
@@ -506,4 +561,5 @@ module.exports = {
     getAverageScore,
     getAverageTimeSpent,
     getRecentActivity,
+    submitRatings,
 };

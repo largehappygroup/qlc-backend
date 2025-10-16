@@ -14,7 +14,7 @@ function buildApiPayload(systemPrompt, userPrompt) {
     data: {
       model: "gpt-4o",
       temperature: 0.7,
-      max_tokens: 500, // make sure enough tokens are given to receive the entire response
+      max_tokens: 100000, // make sure enough tokens are given to receive the entire response
       dataSources: [{ id: "gibberish", type: "application/pdf" }], // required field, for rag -- will skip later
       messages: [
         { role: "system", content: systemPrompt },

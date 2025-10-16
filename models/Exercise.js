@@ -28,9 +28,10 @@ const ExerciseSchema = new Schema({
                 type: ObjectId, // mongodb generated unique id for the question in the exercise
                 required: true,
             },
-            flagged: {
-                type: Boolean,
-                required: true,
+            ratings: {
+                type: Map,
+                of: Number,
+                default: () => new Map(),
             },
             query: {
                 type: String, // prompt/question for the exercise
