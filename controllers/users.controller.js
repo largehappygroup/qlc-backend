@@ -250,7 +250,7 @@ const getAverageScoreDistribution = async (req, res) => {
                 }
             }
         } else {
-            const users = await User.find({ role: "student" });
+            const users = await User.find();
 
             for (const user of users) {
                 const userExercises = await Exercise.find({
