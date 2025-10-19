@@ -102,7 +102,7 @@ const createExercise = async (req, res) => {
                 if (count <= 0) continue;
 
                 const systemPromptText = systemPrompt(qt, count);
-                const userPromptText = userPrompt(studentCode);
+                const userPromptText = await userPrompt(studentCode);
                 const questionsForType = await generateQuestions(
                     systemPromptText,
                     userPromptText
