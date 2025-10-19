@@ -1,9 +1,11 @@
-require("dotenv").config();
+
 const fs = require("fs");
 const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+
 
 const { systemPrompt } = require("../utils/prompt_question_types");
-const { generateQuestions } = require("../services/QuestionGeneration");
+const { generateQuestions } = require("../services/questionGeneration");
 // const { studentSubmissions, contextArray } = require("./dummy-data");
 const { helenSubmimssion, helenContext } = require("./dummy-data");
 

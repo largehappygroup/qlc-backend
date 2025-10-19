@@ -5,7 +5,7 @@ const Chapter = require("../models/Chapter.js");
 const ChapterAssignment = require("../models/ChapterAssignment.js");
 
 const categories = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "categories.json"), "utf8")
+    fs.readFileSync(path.join(__dirname, "categories.json"), "utf8")
 );
 /**
  * Fetches and compiles background context for a given assignment, including details about the assignment itself and its parent chapter, from the database.
@@ -14,38 +14,38 @@ const categories = JSON.parse(
  * @throws {Error} Throws an error if the assignment or chapter cannot be found.
  */
 const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
-  // Assignment details
-  try {
-    const chapterAssignmentDetails = await ChapterAssignment.findById(
-      assignmentId
-    ).select("title instructions chapterId");
+    // Assignment details
+    try {
+        const chapterAssignmentDetails = await ChapterAssignment.findById(
+            assignmentId
+        ).select("title instructions chapterId");
 
-    if (!chapterAssignmentDetails) {
-      throw new Error("Assignment not found.");
-    }
+        if (!chapterAssignmentDetails) {
+            throw new Error("Assignment not found.");
+        }
 
-    const {
-      title: assignmentTitle,
-      instructions: assignmentInstruction,
-      chapterId,
-    } = chapterAssignmentDetails;
+        const {
+            title: assignmentTitle,
+            instructions: assignmentInstruction,
+            chapterId,
+        } = chapterAssignmentDetails;
 
-    // Chapter details
-    const chapterDetails = await Chapter.findById(chapterId).select(
-      "learningObjectives title description"
-    );
+        // Chapter details
+        const chapterDetails = await Chapter.findById(chapterId).select(
+            "learningObjectives title description"
+        );
 
-    if (!chapterDetails) {
-      throw new Error("Chapter not found.");
-    }
+        if (!chapterDetails) {
+            throw new Error("Chapter not found.");
+        }
 
-    const {
-      learningObjectives: chapterLearningObjectives,
-      title: chapterTitle,
-      description: chapterDescription,
-    } = chapterDetails;
+        const {
+            learningObjectives: chapterLearningObjectives,
+            title: chapterTitle,
+            description: chapterDescription,
+        } = chapterDetails;
 
-    return `
+        return `
       Chapter Details: 
         - Chapter Title: ${chapterTitle}
         - Chapter Description:${chapterDescription}
@@ -55,9 +55,9 @@ const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
         - Assignment Title: ${assignmentTitle}
         - Assignment Instructions: ${assignmentInstruction}
     `;
-  } catch (error) {
-    throw error;
-  }
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -65,21 +65,21 @@ const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
  * @returns {string} A detailed instruction string, formatted and ready to be sent to the AI.
  */
 const systemPrompt = () => {
-  const incorrectAnswers = 3;
-  const maxNumberOfHints = 3;
-  const category = "Apply";
-  const numberOfQuestions = 6;
-  const questionType = ["multiple-choice", "coding"][0]; // only dealing with MCQs at the moment
+    const incorrectAnswers = 3;
+    const maxNumberOfHints = 3;
+    const category = "Apply";
+    const numberOfQuestions = 6;
+    const questionType = ["multiple-choice", "coding"][0]; // only dealing with MCQs at the moment
 
-  const categoryInfo = categories[category];
-  const subCategories = Object.keys(categoryInfo.subCategories);
+    const categoryInfo = categories[category];
+    const subCategories = Object.keys(categoryInfo.subCategories);
 
-  // Formatting in a bullet point list with a bold title
-  const subCategoriesString = Object.entries(categoryInfo.subCategories)
-    .map(([title, description]) => `- **${title}:** ${description}`)
-    .join("\n");
+    // Formatting in a bullet point list with a bold title
+    const subCategoriesString = Object.entries(categoryInfo.subCategories)
+        .map(([title, description]) => `- **${title}:** ${description}`)
+        .join("\n");
 
-  return `
+    return `
   Your primary task is to analyze the provided student code and generate questions that require the student to analyze their work. 
   The questions must test the student's ability to explain their code in terms of, but not limited to, syntax, execution flow, and overall design. 
   Avoid straightforward questions that can be answered at a glance. Formulate prompts that force the student to think critically and reflect on their implementation before answering.
@@ -99,14 +99,14 @@ For each question you generate, you must provide the following in a structured f
 3.  **Explanation:** For the correct answer, provide a concise explanation of why it is correct, referencing the student's code if necessary.
 4.  **Hints:** You must provide ${maxNumberOfHints} hints. The first hint must explain why the first incorrect answer is wrong. The second hint must explain why the second incorrect answer is wrong, and the third hint must explain why the third incorrect answer is wrong.
 5.  **Targeted Sub-Category:** Assign the specific sub-category of ${category} category you targeted for the question. The options are: ${subCategories.join(
-    ", "
-  )}.  
+        ", "
+    )}.  
 
 Your response must be a valid JSON array containing ${numberOfQuestions} question objects, with ${
-    numberOfQuestions / subCategories.length
-  } questions from each of the ${
-    subCategories.length
-  } sub-categories of ${category}. Return only the raw JSON and nothing else. Do not wrap the response in markdown code fences. Do not include any text before or after the JSON array.
+        numberOfQuestions / subCategories.length
+    } questions from each of the ${
+        subCategories.length
+    } sub-categories of ${category}. Return only the raw JSON and nothing else. Do not wrap the response in markdown code fences. Do not include any text before or after the JSON array.
 Each object in the array must follow this exact structure:
 [
   {
@@ -133,7 +133,7 @@ Each object in the array must follow this exact structure:
 // logic for getting students' code from AutoGrader
 // Dummy code at the momment
 const studentCode = () => {
-  return `
+    return `
     function calculateTotal(prices) {
       let total = 0;
       for (let i = 0; i < prices.length; i++) {
@@ -150,7 +150,7 @@ const studentCode = () => {
  * @returns {Promise<string>} The complete prompt string ready to be sent to the AI.
  */
 const userPrompt = async (assignmentId) => {
-  return `
+    return `
     Context: 
     ${await fetchAssignmentAndChapterDetails(assignmentId)}
     
@@ -160,6 +160,6 @@ const userPrompt = async (assignmentId) => {
 };
 
 module.exports = {
-  userPrompt,
-  systemPrompt,
+    userPrompt,
+    systemPrompt,
 };

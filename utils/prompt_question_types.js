@@ -5,7 +5,7 @@ const Chapter = require("../models/Chapter.js");
 const ChapterAssignment = require("../models/ChapterAssignment.js");
 
 const questionTypes = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "question_types.json"), "utf8")
+    fs.readFileSync(path.join(__dirname, "question_types.json"), "utf8")
 );
 /**
  * Fetches and compiles background context for a given assignment, including details about the assignment itself and its parent chapter, from the database.
@@ -14,38 +14,38 @@ const questionTypes = JSON.parse(
  * @throws {Error} Throws an error if the assignment or chapter cannot be found.
  */
 const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
-  // Assignment details
-  try {
-    const chapterAssignmentDetails = await ChapterAssignment.findById(
-      assignmentId
-    ).select("title instructions chapterId");
+    // Assignment details
+    try {
+        const chapterAssignmentDetails = await ChapterAssignment.findById(
+            assignmentId
+        ).select("title instructions chapterId");
 
-    if (!chapterAssignmentDetails) {
-      throw new Error("Assignment not found.");
-    }
+        if (!chapterAssignmentDetails) {
+            throw new Error("Assignment not found.");
+        }
 
-    const {
-      title: assignmentTitle,
-      instructions: assignmentInstruction,
-      chapterId,
-    } = chapterAssignmentDetails;
+        const {
+            title: assignmentTitle,
+            instructions: assignmentInstruction,
+            chapterId,
+        } = chapterAssignmentDetails;
 
-    // Chapter details
-    const chapterDetails = await Chapter.findById(chapterId).select(
-      "learningObjectives title description"
-    );
+        // Chapter details
+        const chapterDetails = await Chapter.findById(chapterId).select(
+            "learningObjectives title description"
+        );
 
-    if (!chapterDetails) {
-      throw new Error("Chapter not found.");
-    }
+        if (!chapterDetails) {
+            throw new Error("Chapter not found.");
+        }
 
-    const {
-      learningObjectives: chapterLearningObjectives,
-      title: chapterTitle,
-      description: chapterDescription,
-    } = chapterDetails;
+        const {
+            learningObjectives: chapterLearningObjectives,
+            title: chapterTitle,
+            description: chapterDescription,
+        } = chapterDetails;
 
-    return `
+        return `
       Chapter Details: 
         - Chapter Title: ${chapterTitle}
         - Chapter Description:${chapterDescription}
@@ -55,9 +55,9 @@ const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
         - Assignment Title: ${assignmentTitle}
         - Assignment Instructions: ${assignmentInstruction}
     `;
-  } catch (error) {
-    throw error;
-  }
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -65,20 +65,19 @@ const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
  * @param {string} questionType - The type of the question. Exact match with keys in question_types.json
  * @returns {string} A detailed instruction string, formatted and ready to be sent to the AI.
  */
-const systemPrompt = (questionType) => {
-  const incorrectAnswers = 3;
-  const maxNumberOfHints = 3;
-  const questionStructure = ["multiple-choice", "coding"][0]; // only dealing with MCQs at the moment
-  const numberOfQuestions = 5;
+const systemPrompt = (questionType, numberOfQuestions = 5) => {
+    const incorrectAnswers = 3;
+    const maxNumberOfHints = 3;
+    const questionStructure = ["multiple-choice", "coding"][0]; // only dealing with MCQs at the moment
 
-  const questionTypeInfo = questionTypes[questionType];
+    const questionTypeInfo = questionTypes[questionType];
 
-  // Format the generation directives into a bulleted list string
-  const directivesString = questionTypeInfo.generation_directives
-    .map((directive) => `- ${directive}`)
-    .join("\n");
+    // Format the generation directives into a bulleted list string
+    const directivesString = questionTypeInfo.generation_directives
+        .map((directive) => `- ${directive}`)
+        .join("\n");
 
-  return `
+    return `
 Your primary task is to analyze the provided student code and generate questions related to the student's code.  
 Focus your questions strictly on the **${questionType}** question type, as described below. 
 
@@ -112,10 +111,14 @@ Before generating the final JSON, you must perform a final check to ensure every
 If any directive is violated, you must revise the question until it is fully compliant.
 `;
 };
-// logic for getting students' code from AutoGrader
-// Dummy code at
+
+
+/**
+ * Backwards-compatible dummy studentCode function (synchronous), used when no params supplied.
+ * Prefer using fetchStudentCode(studentEmail, assignmentId) in async contexts.
+ */
 const studentCode = () => {
-  return `
+    return `
     function calculateTotal(prices) {
       let total = 0;
       for (let i = 0; i < prices.length; i++) {
@@ -130,14 +133,14 @@ const studentCode = () => {
  * Combines the contextual background with the student's code.
  * @returns {Promise<string>} The complete prompt string ready to be sent to the AI.
  */
-const userPrompt = async () => {
-  return `    
+const userPrompt = async (studentCodeFiles) => {
+    return `    
     Students' code:
-    ${studentCode()}
+    ${studentCodeFiles}
     `;
 };
 
 module.exports = {
-  userPrompt,
-  systemPrompt,
+    userPrompt,
+    systemPrompt,
 };

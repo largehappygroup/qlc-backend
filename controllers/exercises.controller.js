@@ -5,8 +5,14 @@ const mongoose = require("mongoose");
 const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
 const { generateQuestions } = require("../services/questionGeneration.js");
-const { questionGenerationPrompt } = require("../utils/prompt.js");
+const {fetchStudentCode, doesSubmissionFolderExist} = require("../utils/student_code.js");
+const {
+    systemPrompt,
+    userPrompt,
+} = require("../utils/prompt_question_types.js");
 const { ObjectId } = mongoose.Types;
+
+
 
 /**
  * Creates a new exercise with AI.
@@ -26,15 +32,82 @@ const createExercise = async (req, res) => {
             if (search) {
                 return res.status(201).json(search);
             }
-            const prompt = questionGenerationPrompt(assignmentId);
-            const questions = generateQuestions();
+            const assignment = await ChapterAssignment.findById(assignmentId);
+            
+            const user = await User.findById(userId);
+            let authorId;
+            if (!user.studyParticipation || user.studyGroup === "A") {
+                authorId = userId;
+            } else {
+                const usersInStudy = await User.find({ studyParticipation: true });
+                let potentialAuthors = usersInStudy.filter((u) => u._id.toString() !== userId);
+
+                while (potentialAuthors.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * potentialAuthors.length);
+                    const selectedAuthor = potentialAuthors[randomIndex];
+
+                    const hasSubmission = await doesSubmissionFolderExist(
+                        assignment.identifier,
+                        selectedAuthor.email
+                    );
+
+                    if (hasSubmission) {
+                        authorId = selectedAuthor._id;
+                        break;
+                    } else {
+                        potentialAuthors.splice(randomIndex, 1); // Remove the selected author and try again
+                    }
+                }
+
+                if (!authorId) {
+                    throw new Error("No suitable author with a submission found.");
+                }
+            }
+
+            console.log("Selected authorId:", authorId);
+
+            const studentCode = await fetchStudentCode(
+                authorId,
+                assignment.identifier
+            );
+
+            const questionTypes = [
+                "Variable State Trace",
+                "Execution Path Analysis",
+            ];
+
+            let questions = [];
+
+            let numberOfQuestions = 5;
+            const typesCount = questionTypes.length;
+            const base = Math.floor(numberOfQuestions / typesCount);
+            const remainder = numberOfQuestions % typesCount;
+
+            for (let i = 0; i < typesCount; i++) {
+                const qt = questionTypes[i];
+                const count = i === typesCount - 1 ? base + remainder : base;
+
+                if (count <= 0) continue;
+
+                const systemPromptText = systemPrompt(qt, count);
+                const userPromptText = userPrompt(studentCode);
+                const questionsForType = await generateQuestions(
+                    systemPromptText,
+                    userPromptText
+                );
+                questions = questions.concat(questionsForType);
+            }
+
+            console.log(questions);
+
             const exercise = new Exercise({
                 _id: new ObjectId(),
                 date,
                 userId,
-                topics: ["Programming"],
+                authorId,
+                assignmentId,
                 questions,
-                status: "incomplete",
+                status: "Not Started",
                 totalTimeSpent: 0,
                 totalCorrect: 0,
             });
@@ -294,7 +367,11 @@ const submitRatings = async (req, res) => {
             return res.status(404).send({ message: "Question not found." });
         }
 
-        if (ratings && typeof ratings === "object" && !(ratings instanceof Map)) {
+        if (
+            ratings &&
+            typeof ratings === "object" &&
+            !(ratings instanceof Map)
+        ) {
             question.ratings = new Map(Object.entries(ratings));
         } else {
             question.ratings = ratings;
