@@ -157,9 +157,7 @@ const fetchStudentCode = async (studentEmail, assignmentIdentifier, options = {}
     return files
         .map(
             (f) =>
-                `// ===== File: ${f.filename} (${
-                    f.path
-                }) =====\n${f.content.trim()}\n`
+                `// ===== File: ${f.filename} =====\n${f.content.trim()}\n`
         )
         .join("\n");
 };
