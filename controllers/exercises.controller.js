@@ -28,7 +28,7 @@ const createExercise = async (req, res) => {
             const search = await Exercise.findOne({
                 userId: ObjectId.createFromHexString(userId),
                 assignmentId: ObjectId.createFromHexString(assignmentId),
-            });
+            }).lean();
 
             if (search) {
                 for (let i = 0; i < search.questions.length; i++) {
@@ -136,13 +136,13 @@ const createExercise = async (req, res) => {
                 completedQuestions: 0,
             });
             await exercise.save();
-
-            for (let i = 0; i < exercise.questions.length; i++) {
-                const question = exercise.questions[i];
-                exercise.questions[i] = filterQuestion(question);
+            const returnExercise = exercise.toObject();
+            for (let i = 0; i < returnExercise.questions.length; i++) {
+                const question = returnExercise.questions[i];
+                returnExercise.questions[i] = filterQuestion(question);
             }
 
-            return res.status(200).json(exercise);
+            return res.status(200).json(returnExercise);
         } else {
             return res.status(400).send({ message: "User ID not found." });
         }
