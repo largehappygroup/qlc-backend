@@ -5,14 +5,15 @@ const mongoose = require("mongoose");
 const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
 const { generateQuestions } = require("../services/questionGeneration.js");
-const {fetchStudentCode, doesSubmissionFolderExist} = require("../utils/student_code.js");
+const {
+    fetchStudentCode,
+    doesSubmissionFolderExist,
+} = require("../utils/student_code.js");
 const {
     systemPrompt,
     userPrompt,
 } = require("../utils/prompt_question_types.js");
 const { ObjectId } = mongoose.Types;
-
-
 
 /**
  * Creates a new exercise with AI.
@@ -33,17 +34,25 @@ const createExercise = async (req, res) => {
                 return res.status(201).json(search);
             }
             const assignment = await ChapterAssignment.findById(assignmentId);
-            
+
             const user = await User.findById(userId);
             let authorId;
+            let author;
             if (!user.studyParticipation || user.studyGroup === "A") {
                 authorId = userId;
+                author = user;
             } else {
-                const usersInStudy = await User.find({ studyParticipation: true });
-                let potentialAuthors = usersInStudy.filter((u) => u._id.toString() !== userId);
-                let author;
+                const usersInStudy = await User.find({
+                    studyParticipation: true,
+                });
+                let potentialAuthors = usersInStudy.filter(
+                    (u) => u._id.toString() !== userId
+                );
+
                 while (potentialAuthors.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * potentialAuthors.length);
+                    const randomIndex = Math.floor(
+                        Math.random() * potentialAuthors.length
+                    );
                     const selectedAuthor = potentialAuthors[randomIndex];
 
                     const hasSubmission = await doesSubmissionFolderExist(
@@ -61,7 +70,9 @@ const createExercise = async (req, res) => {
                 }
 
                 if (!authorId) {
-                    throw new Error("No suitable author with a submission found.");
+                    throw new Error(
+                        "No suitable author with a submission found."
+                    );
                 }
             }
 
