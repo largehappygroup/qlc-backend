@@ -63,8 +63,14 @@ const generateQuestions = async (systemPrompt, userPrompt) => {
   // Validate inputs
   if (typeof systemPrompt !== "string" || typeof userPrompt !== "string") {
     console.error("Invalid input: systemPrompt and userPrompt must be strings.");
+    console.error("Received systemPrompt:", systemPrompt);
+    console.error("Received userPrompt:", userPrompt);
     throw new Error("Invalid input: systemPrompt and userPrompt must be strings.");
   }
+
+  // TODO: remove after debugging
+  console.log("Type of systemPrompt:", typeof systemPrompt, "Value:", systemPrompt);
+  console.log("Type of userPrompt:", typeof userPrompt, "Value:", userPrompt);
 
   const headers = {
     "Content-Type": "application/json",
