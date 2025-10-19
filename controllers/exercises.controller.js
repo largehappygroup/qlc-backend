@@ -41,7 +41,7 @@ const createExercise = async (req, res) => {
             } else {
                 const usersInStudy = await User.find({ studyParticipation: true });
                 let potentialAuthors = usersInStudy.filter((u) => u._id.toString() !== userId);
-
+                let author;
                 while (potentialAuthors.length > 0) {
                     const randomIndex = Math.floor(Math.random() * potentialAuthors.length);
                     const selectedAuthor = potentialAuthors[randomIndex];
@@ -53,6 +53,7 @@ const createExercise = async (req, res) => {
 
                     if (hasSubmission) {
                         authorId = selectedAuthor._id;
+                        author = selectedAuthor;
                         break;
                     } else {
                         potentialAuthors.splice(randomIndex, 1); // Remove the selected author and try again
@@ -67,7 +68,7 @@ const createExercise = async (req, res) => {
             console.log("Selected authorId:", authorId);
 
             const studentCode = await fetchStudentCode(
-                authorId,
+                author.email,
                 assignment.identifier
             );
 
