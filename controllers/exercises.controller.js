@@ -31,6 +31,8 @@ const createExercise = async (req, res) => {
             });
 
             if (search) {
+                search.questions = filteredQuestions(search.questions);
+
                 return res.status(201).json(search);
             }
             const assignment = await ChapterAssignment.findById(assignmentId);
@@ -119,10 +121,7 @@ const createExercise = async (req, res) => {
 
                 questions = questions.concat(questionsForType);
             }
-
-            console.log(questions);
-
-            const exercise = new Exercise({
+            let exercise = new Exercise({
                 _id: new ObjectId(),
                 userId,
                 authorId,
@@ -134,6 +133,7 @@ const createExercise = async (req, res) => {
                 completedQuestions: 0,
             });
             await exercise.save();
+            exercise.questions = filteredQuestions(exercise.questions);
 
             return res.status(200).json(exercise);
         } else {
@@ -207,6 +207,27 @@ const editExercise = async (req, res) => {
     }
 };
 
+const filteredQuestions = (questions) => {
+    return questions.map((question) => {
+        return {
+            _id: question._id,
+            query: question.query,
+            type: question.type,
+            hints: question.hints,
+            topics: question.topics,
+            explanation: question.explanation,
+            availableAnswers: [question.correctAnswer, ...question.otherAnswers]
+                .map((value) => ({ value, sort: Math.random() }))
+                .sort((a, b) => a.sort - b.sort)
+                .map(({ value }) => value),
+            userAnswers: question.userAnswers,
+
+            timeSpent: question.timeSpent,
+            correct: question.correct,
+        };
+    });
+};
+
 /**
  * Retrieves an exercise by ID.
  * @param {*} req - request details
@@ -222,31 +243,7 @@ const getExercise = async (req, res) => {
                 return res.status(404).send({ message: "Exercise not found." });
             }
 
-            for (let i = 0; i < exercise.questions.length; i++) {
-                const question = exercise.questions[i];
-                let availableAnswers = [
-                    question.correctAnswer,
-                    ...question.otherAnswers,
-                ]
-                    .map((value) => ({ value, sort: Math.random() }))
-                    .sort((a, b) => a.sort - b.sort)
-                    .map(({ value }) => value);
-
-                const filteredQuestion = {
-                    _id: question._id,
-                    query: question.query,
-                    type: question.type,
-                    hints: question.hints,
-                    topics: question.topics,
-                    explanation: question.explanation,
-                    availableAnswers,
-                    userAnswers: question.userAnswers,
-                    timeSpent: question.timeSpent,
-                    correct: question.correct,
-                };
-
-                exercise.questions[i] = filteredQuestion;
-            }
+            exercise.questions = filteredQuestions(exercise.questions);
 
             return res.status(200).json(exercise);
         } else {
