@@ -31,8 +31,11 @@ const createExercise = async (req, res) => {
             });
 
             if (search) {
-                search.questions = filteredQuestions(search.questions);
-
+                for (let i = 0; i < search.questions.length; i++) {
+                    const question = search.questions[i];
+                    search.questions[i] = filterQuestion(question);
+                }
+                console.log("Returning existing exercise:", search);
                 return res.status(201).json(search);
             }
             const assignment = await ChapterAssignment.findById(assignmentId);
@@ -121,7 +124,7 @@ const createExercise = async (req, res) => {
 
                 questions = questions.concat(questionsForType);
             }
-            let exercise = new Exercise({
+            const exercise = new Exercise({
                 _id: new ObjectId(),
                 userId,
                 authorId,
@@ -133,7 +136,11 @@ const createExercise = async (req, res) => {
                 completedQuestions: 0,
             });
             await exercise.save();
-            exercise.questions = filteredQuestions(exercise.questions);
+
+            for (let i = 0; i < exercise.questions.length; i++) {
+                const question = exercise.questions[i];
+                exercise.questions[i] = filterQuestion(question);
+            }
 
             return res.status(200).json(exercise);
         } else {
@@ -207,29 +214,25 @@ const editExercise = async (req, res) => {
     }
 };
 
-const filteredQuestions = (questions) => {
-    return questions.map((question) => {
-        const availableAnswers = [
-            question.correctAnswer,
-            ...(question.otherAnswers || []), // Ensure otherAnswers is not undefined
-        ]
-            .map((value) => ({ value, sort: Math.random() }))
-            .sort((a, b) => a.sort - b.sort)
-            .map(({ value }) => value);
+const filterQuestion = (question) => {
+    let availableAnswers = [question.correctAnswer, ...question.otherAnswers]
+        .map((value) => ({ value, sort: Math.random() }))
+        .sort((a, b) => a.sort - b.sort)
+        .map(({ value }) => value);
 
-        return {
-            _id: question._id,
-            query: question.query,
-            type: question.type,
-            hints: question.hints,
-            topics: question.topics,
-            explanation: question.explanation,
-            availableAnswers,
-            userAnswers: question.userAnswers,
-            timeSpent: question.timeSpent,
-            correct: question.correct,
-        };
-    });
+    const filteredQuestion = {
+        _id: question._id,
+        query: question.query,
+        type: question.type,
+        hints: question.hints,
+        topics: question.topics,
+        explanation: question.explanation,
+        availableAnswers,
+        userAnswers: question.userAnswers,
+        timeSpent: question.timeSpent,
+        correct: question.correct,
+    };
+    return filteredQuestion;
 };
 
 /**
@@ -247,7 +250,10 @@ const getExercise = async (req, res) => {
                 return res.status(404).send({ message: "Exercise not found." });
             }
 
-            exercise.questions = filteredQuestions(exercise.questions);
+            for (let i = 0; i < exercise.questions.length; i++) {
+                const question = exercise.questions[i];
+                exercise.questions[i] = filterQuestion(question);
+            }
 
             return res.status(200).json(exercise);
         } else {
