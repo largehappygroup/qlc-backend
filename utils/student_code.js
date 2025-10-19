@@ -6,7 +6,7 @@ const path = require("path");
  * @returns {string}
  */
 const getSubmissionsDir = (assignmentIdentifier) =>
-    path.join(__dirname, "..", "assignments", assignmentIdentifier, "submissions");
+    path.join(__dirname, "../..", "assignment-submissions", assignmentIdentifier, "submissions");
 
 /**
  * Find the most recent submission folder for a student in an assignment's submissions dir.
