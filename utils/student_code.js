@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 /**
  * Get the submissions directory for an assignment
  * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A)
