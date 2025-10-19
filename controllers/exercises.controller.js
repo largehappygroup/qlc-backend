@@ -209,6 +209,14 @@ const editExercise = async (req, res) => {
 
 const filteredQuestions = (questions) => {
     return questions.map((question) => {
+        const availableAnswers = [
+            question.correctAnswer,
+            ...(question.otherAnswers || []), // Ensure otherAnswers is not undefined
+        ]
+            .map((value) => ({ value, sort: Math.random() }))
+            .sort((a, b) => a.sort - b.sort)
+            .map(({ value }) => value);
+
         return {
             _id: question._id,
             query: question.query,
@@ -216,12 +224,8 @@ const filteredQuestions = (questions) => {
             hints: question.hints,
             topics: question.topics,
             explanation: question.explanation,
-            availableAnswers: [question.correctAnswer, ...question.otherAnswers]
-                .map((value) => ({ value, sort: Math.random() }))
-                .sort((a, b) => a.sort - b.sort)
-                .map(({ value }) => value),
+            availableAnswers,
             userAnswers: question.userAnswers,
-
             timeSpent: question.timeSpent,
             correct: question.correct,
         };
