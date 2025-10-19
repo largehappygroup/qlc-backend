@@ -142,7 +142,7 @@ const createExercise = async (req, res) => {
                 returnExercise.questions[i] = filterQuestion(question);
             }
 
-            return res.status(200).json(returnExercise);
+            return res.status(200).json({exercise: returnExercise, studentCode});
         } else {
             return res.status(400).send({ message: "User ID not found." });
         }
