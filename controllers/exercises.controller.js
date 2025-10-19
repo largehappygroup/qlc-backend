@@ -112,6 +112,7 @@ const createExercise = async (req, res) => {
 
             console.log(questions);
 
+            const date = new Date();
             const exercise = new Exercise({
                 _id: new ObjectId(),
                 date,
