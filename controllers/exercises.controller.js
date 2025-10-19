@@ -112,10 +112,8 @@ const createExercise = async (req, res) => {
 
             console.log(questions);
 
-            const date = new Date();
             const exercise = new Exercise({
                 _id: new ObjectId(),
-                date,
                 userId,
                 authorId,
                 assignmentId,
@@ -123,6 +121,7 @@ const createExercise = async (req, res) => {
                 status: "Not Started",
                 totalTimeSpent: 0,
                 totalCorrect: 0,
+                completedQuestions: 0,
             });
             await exercise.save();
 
