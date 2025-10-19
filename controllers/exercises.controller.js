@@ -103,10 +103,20 @@ const createExercise = async (req, res) => {
 
                 const systemPromptText = systemPrompt(qt, count);
                 const userPromptText = await userPrompt(studentCode);
-                const questionsForType = await generateQuestions(
+                let questionsForType = await generateQuestions(
                     systemPromptText,
                     userPromptText
                 );
+
+                // Add additional fields to each question
+                questionsForType = questionsForType.map((question) => ({
+                    ...question,
+                    _id: new mongoose.Types.ObjectId(),
+                    difficulty: "easy",
+                    timeSpent: 0,
+                    type: "multiple-choice",
+                }));
+
                 questions = questions.concat(questionsForType);
             }
 
@@ -228,7 +238,6 @@ const getExercise = async (req, res) => {
                     type: question.type,
                     hints: question.hints,
                     topics: question.topics,
-                    difficulty: question.difficulty,
                     explanation: question.explanation,
                     availableAnswers,
                     userAnswers: question.userAnswers,
@@ -312,7 +321,6 @@ const getAllExercises = async (req, res) => {
                     type: question.type,
                     hints: question.hints,
                     topics: question.topics,
-                    difficulty: question.difficulty,
                     explanation: question.explanation,
                     availableAnswers,
                     userAnswers: question.userAnswers,

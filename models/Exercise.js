@@ -47,10 +47,6 @@ const ExerciseSchema = new Schema({
                 type: String, // the true answer, aggregate together with otherAnswers as availableAnswers
                 required: true,
             },
-            difficulty: {
-                type: String, // level of difficulty for the question
-                required: true,
-            },
             otherAnswers: [{ type: String }], // incorrect answers, aggregate as availableAnswers
             explanation: {
                 type: String, // explanation for the correct answer

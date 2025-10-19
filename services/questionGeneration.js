@@ -68,10 +68,6 @@ const generateQuestions = async (systemPrompt, userPrompt) => {
     throw new Error("Invalid input: systemPrompt and userPrompt must be strings.");
   }
 
-  // TODO: remove after debugging
-  console.log("Type of systemPrompt:", typeof systemPrompt, "Value:", systemPrompt);
-  console.log("Type of userPrompt:", typeof userPrompt, "Value:", userPrompt);
-
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${AMPLIFY_API_KEY}`,
