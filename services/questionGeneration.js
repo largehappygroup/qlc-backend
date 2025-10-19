@@ -60,12 +60,21 @@ const generateQuestions = async (systemPrompt, userPrompt) => {
     throw new Error("AMPLIFY API key is missing.");
   }
 
+  // Validate inputs
+  if (typeof systemPrompt !== "string" || typeof userPrompt !== "string") {
+    console.error("Invalid input: systemPrompt and userPrompt must be strings.");
+    throw new Error("Invalid input: systemPrompt and userPrompt must be strings.");
+  }
+
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${AMPLIFY_API_KEY}`,
   };
 
   const payload = buildApiPayload(systemPrompt, userPrompt);
+
+  // Log payload for debugging
+  console.log("Payload being sent to API:", JSON.stringify(payload, null, 2));
 
   try {
     const response = await axios.post(API_ENDPOINT, payload, { headers });
