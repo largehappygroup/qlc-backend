@@ -29,16 +29,24 @@ const createExercise = async (req, res) => {
                 userId: ObjectId.createFromHexString(userId),
                 assignmentId: ObjectId.createFromHexString(assignmentId),
             }).lean();
+            const assignment = await ChapterAssignment.findById(assignmentId);
 
             if (search) {
                 for (let i = 0; i < search.questions.length; i++) {
                     const question = search.questions[i];
                     search.questions[i] = filterQuestion(question);
                 }
+                const author = await User.findById(search.authorId);
+                const studentCode = await fetchStudentCode(
+                    author.email,
+                    assignment.identifier
+                );
+
                 console.log("Returning existing exercise:", search);
-                return res.status(201).json(search);
+                return res
+                    .status(201)
+                    .json({ exercise: search, studentCode: studentCode });
             }
-            const assignment = await ChapterAssignment.findById(assignmentId);
 
             const user = await User.findById(userId);
             let authorId;
@@ -142,7 +150,9 @@ const createExercise = async (req, res) => {
                 returnExercise.questions[i] = filterQuestion(question);
             }
 
-            return res.status(200).json({exercise: returnExercise, studentCode});
+            return res
+                .status(200)
+                .json({ exercise: returnExercise, studentCode: studentCode });
         } else {
             return res.status(400).send({ message: "User ID not found." });
         }
