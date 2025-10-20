@@ -7,13 +7,18 @@ const FeedbackSchema = new Schema({
         type: ObjectId, // mongodb generated unique id for the feedback
         required: true,
     },
+    uuid: {
+        type: String, // universally unique identifier for the feedback
+        required: true,
+        unique: true,
+    },
     chapterId: {
-        type: ObjectId, // mongodb generated unique id for the chapter corresponding to feedback
+        type: String, // universally unique identifier for the chapter corresponding to feedback
         required: true,
         ref: "Chapter",
     },
     userId: {
-        type: ObjectId, // mongodb generated unique id for the user providing feedback
+        type: String, // vunetid for the user providing feedback
         ref: "User",
         required: true,
     },

@@ -16,11 +16,13 @@ const { ObjectId } = mongoose.Types;
  */
 const createUser = async (req, res) => {
     try {
+        // from vusso
         const email = req.headers["remote-user"];
         const firstName = req.headers["remote-user-given-name"];
         const lastName = req.headers["remote-user-family-name"];
         const vuNetId = req.headers["remote-user-vunetid"];
         const role = req.body.role || "student";
+        
         if (firstName && lastName && vuNetId && email && role) {
             let user = await User.findOne({ vuNetId });
             if (!user) {
@@ -61,7 +63,7 @@ const deleteUser = async (req, res) => {
 
     try {
         if (id) {
-            const user = await User.findbyIdAndDelete(id);
+            const user = await User.findOneAndDelete({uuid: id});
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -79,11 +81,17 @@ const deleteUser = async (req, res) => {
     }
 };
 
+/**
+ * Edits a user by ID.
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details
+ */
 const editUser = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const user = await User.findByIdAndUpdate(id, req.body);
+            const user = await User.findOneAndUpdate({ vuNetId: id }, req.body, { new: true });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -107,7 +115,7 @@ const getUser = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const user = await User.findById(id);
+            const user = await User.findOne({ vuNetId: id });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -185,118 +193,6 @@ const downloadUsers = async (req, res) => {
     }
 };
 
-/**
- * Gets the distribution of average scores across all students or a specific student if userId is provided
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
- */
-const getAverageScoreDistribution = async (req, res) => {
-    const { userId } = req.query;
-    try {
-        let results = [
-            {
-                percentage: "0-49",
-                data: 0,
-                color: "red",
-            },
-            {
-                percentage: "50-59",
-                data: 0,
-                color: "purple",
-            },
-            {
-                percentage: "60-69",
-                data: 0,
-                color: "orange",
-            },
-            {
-                percentage: "70-79",
-                data: 0,
-                color: "yellow",
-            },
-            {
-                percentage: "80-89",
-                data: 0,
-                color: "blue",
-            },
-            {
-                percentage: "90-100",
-                data: 0,
-                color: "green",
-            },
-        ];
-        if (userId) {
-            const userExercises = await Exercise.find({
-                userId: ObjectId.createFromHexString(userId),
-                status: "Complete",
-            });
-            console.log("userExercises:", userExercises);
-            for (const exercise of userExercises) {
-                const score =
-                    (exercise.totalCorrect / exercise.questions.length) * 100;
-                let range = null;
-                if (score < 50) range = "0-49";
-                else if (score < 60) range = "50-59";
-                else if (score < 70) range = "60-69";
-                else if (score < 80) range = "70-79";
-                else if (score < 90) range = "80-89";
-                else if (score <= 100) range = "90-100";
-                else throw new Error("Unnatural average calculated: " + score);
-
-                const resultItem = results.find((r) => r.percentage === range);
-                if (resultItem) {
-                    resultItem.data += 1;
-                }
-            }
-        } else {
-            const users = await User.find();
-
-            for (const user of users) {
-                const userExercises = await Exercise.find({
-                    userId: user._id,
-                    status: "Complete",
-                });
-                if (userExercises.length > 0) {
-                    const average =
-                        userExercises.reduce(function (acc, exercise) {
-                            acc +=
-                                (exercise.totalCorrect /
-                                    exercise.questions.length) *
-                                100;
-                            return acc;
-                        }, 0) / userExercises.length;
-
-                    let range = null;
-                    if (average < 50) range = "0-49";
-                    else if (average < 60) range = "50-59";
-                    else if (average < 70) range = "60-69";
-                    else if (average < 80) range = "70-79";
-                    else if (average < 90) range = "80-89";
-                    else if (average <= 100) range = "90-100";
-                    else
-                        throw new Error(
-                            "Unnatural average calculated: " + average
-                        );
-
-                    const resultItem = results.find(
-                        (r) => r.percentage === range
-                    );
-                    if (resultItem) {
-                        resultItem.data += 1;
-                    }
-                }
-            }
-        }
-
-        return res.status(200).json(results);
-    } catch (err) {
-        console.error(err);
-        return res
-            .status(500)
-            .send({ message: "Internal Server Error.", error: err });
-    }
-};
 
 /**
  * Gets the total number of students
@@ -394,7 +290,6 @@ module.exports = {
     getAllUsers,
     downloadUsers,
     uploadUsers,
-    getAverageScoreDistribution,
     getTotalStudents,
     assignGroups,
 };

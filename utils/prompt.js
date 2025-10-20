@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const Chapter = require("../models/Chapter.js");
-const ChapterAssignment = require("../models/ChapterAssignment.js");
+const Assignment = require("../models/Assignment.js");
 
 const categories = JSON.parse(
     fs.readFileSync(path.join(__dirname, "categories.json"), "utf8")
@@ -16,11 +16,11 @@ const categories = JSON.parse(
 const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
     // Assignment details
     try {
-        const chapterAssignmentDetails = await ChapterAssignment.findById(
-            assignmentId
-        ).select("title instructions chapterId");
+        const assignmentDetails = await Assignment.findOne({
+            uuid: assignmentId,
+        }).select("title instructions chapterId");
 
-        if (!chapterAssignmentDetails) {
+        if (!assignmentDetails) {
             throw new Error("Assignment not found.");
         }
 
@@ -31,7 +31,7 @@ const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
         } = chapterAssignmentDetails;
 
         // Chapter details
-        const chapterDetails = await Chapter.findById(chapterId).select(
+        const chapterDetails = await Chapter.findOne({ uuid: chapterId }).select(
             "learningObjectives title description"
         );
 

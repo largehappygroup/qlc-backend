@@ -1,25 +1,27 @@
 const Exercise = require("../models/Exercise.js");
-const ChapterAssignment = require("../models/ChapterAssignment.js");
+const Assignment = require("../models/Assignment.js");
 const User = require("../models/User.js");
+const { ObjectId } = mongoose.Types;
+const crypto = require("crypto");
+
 const mongoose = require("mongoose");
 const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
+
 const { generateQuestions } = require("../services/questionGeneration.js");
-const {
-    fetchStudentCode,
-    doesSubmissionFolderExist,
-} = require("../utils/student_code.js");
+const { fetchStudentCode } = require("../utils/student_code.js");
 const {
     systemPrompt,
     userPrompt,
 } = require("../utils/prompt_question_types.js");
-const { ObjectId } = mongoose.Types;
+
+const { filterQuestion } = require("../utils/exercise_helpers.js");
 
 /**
  * Creates a new exercise with AI.
  * @param {*} req - request details
  * @param {*} res - response details
- * @returns - response details (with status)
+ * @returns - {exercise: created exercise details, studentCode: code associated with the exercise}
  */
 const createExercise = async (req, res) => {
     const { userId, assignmentId } = req.query;
@@ -29,75 +31,27 @@ const createExercise = async (req, res) => {
                 userId: ObjectId.createFromHexString(userId),
                 assignmentId: ObjectId.createFromHexString(assignmentId),
             }).lean();
-            const assignment = await ChapterAssignment.findById(assignmentId);
+
+            const assignment = await Assignment.findOne({ uuid: assignmentId });
 
             if (search) {
                 for (let i = 0; i < search.questions.length; i++) {
                     const question = search.questions[i];
                     search.questions[i] = filterQuestion(question);
                 }
-                const author = await User.findById(search.authorId);
+                const author = await User.findOne({ vuNetId: search.authorId });
                 const studentCode = await fetchStudentCode(
                     author.email,
                     assignment.identifier
                 );
 
-                console.log("Returning existing exercise:", search);
                 return res
                     .status(201)
                     .json({ exercise: search, studentCode: studentCode });
             }
 
-            const user = await User.findById(userId);
-            let authorId;
-            let author;
-            if (!user.studyParticipation || user.studyGroup === "A") {
-                authorId = userId;
-                author = user;
-            } else {
-                const usersInStudy = await User.find({
-                    studyParticipation: true,
-                    _id: { $ne: userId },
-                });
-
-                // First, try to find a submission from other participants (random order)
-                let candidates = usersInStudy.slice();
-                while (candidates.length > 0) {
-                    const randomIndex = Math.floor(
-                        Math.random() * candidates.length
-                    );
-                    const selectedAuthor = candidates[randomIndex];
-
-                    const hasSubmission = await doesSubmissionFolderExist(
-                        assignment.identifier,
-                        selectedAuthor.email
-                    );
-
-                    if (hasSubmission) {
-                        authorId = selectedAuthor._id;
-                        author = selectedAuthor;
-                        break;
-                    } else {
-                        candidates.splice(randomIndex, 1);
-                    }
-                }
-
-                // If no other participant had a submission, finally try the current user as a fallback
-                if (!authorId) {
-                    const hasSubmission = await doesSubmissionFolderExist(
-                        assignment.identifier,
-                        user.email
-                    );
-                    if (hasSubmission) {
-                        authorId = user._id;
-                        author = user;
-                    } else {
-                        throw new Error(
-                            "No suitable author with a submission found."
-                        );
-                    }
-                }
-            }
+            const user = await User.findOne({ vuNetId: userId });
+            const author = await findSubmission(user, assignment);
 
             const studentCode = await fetchStudentCode(
                 author.email,
@@ -133,6 +87,7 @@ const createExercise = async (req, res) => {
                 questionsForType = questionsForType.map((question) => ({
                     ...question,
                     _id: new mongoose.Types.ObjectId(),
+                    uuid: crypto.randomUUID(),
                     difficulty: "easy",
                     timeSpent: 0,
                     type: "multiple-choice",
@@ -142,8 +97,9 @@ const createExercise = async (req, res) => {
             }
             const exercise = new Exercise({
                 _id: new ObjectId(),
+                uuid: crypto.randomUUID(),
                 userId,
-                authorId,
+                authorId: author.vuNetId,
                 assignmentId,
                 questions,
                 status: "Not Started",
@@ -184,7 +140,7 @@ const deleteExercise = async (req, res) => {
 
     try {
         if (id) {
-            const exercise = await Exercise.findbyIdAndDelete(id);
+            const exercise = await Exercise.findOneAndDelete({ uuid: id });
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -213,7 +169,10 @@ const editExercise = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const exercise = await Exercise.findByIdAndUpdate(id, req.body);
+            const exercise = await Exercise.findOneAndUpdate(
+                { uuid: id },
+                req.body
+            );
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -232,27 +191,6 @@ const editExercise = async (req, res) => {
     }
 };
 
-const filterQuestion = (question) => {
-    let availableAnswers = [question.correctAnswer, ...question.otherAnswers]
-        .map((value) => ({ value, sort: Math.random() }))
-        .sort((a, b) => a.sort - b.sort)
-        .map(({ value }) => value);
-
-    const filteredQuestion = {
-        _id: question._id,
-        query: question.query,
-        type: question.type,
-        hints: question.hints,
-        topics: question.topics,
-        explanation: question.explanation,
-        availableAnswers,
-        userAnswers: question.userAnswers,
-        timeSpent: question.timeSpent,
-        correct: question.correct,
-    };
-    return filteredQuestion;
-};
-
 /**
  * Retrieves an exercise by ID.
  * @param {*} req - request details
@@ -263,7 +201,7 @@ const getExercise = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const exercise = await Exercise.findById(id).lean();
+            const exercise = await Exercise.findOne({ uuid: id }).lean();
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -342,6 +280,7 @@ const getAllExercises = async (req, res) => {
 
                 const filteredQuestion = {
                     _id: question._id,
+                    uuid: question.uuid,
                     query: question.query,
                     type: question.type,
                     hints: question.hints,
@@ -400,13 +339,13 @@ const submitRatings = async (req, res) => {
     const { questionId, ratings } = req.body;
 
     try {
-        const exercise = await Exercise.findById(exerciseId);
+        const exercise = await Exercise.findOne({ uuid: exerciseId });
         if (!exercise) {
             return res.status(404).send({ message: "Exercise not found." });
         }
 
         const question = exercise.questions.find((q) =>
-            ObjectId.createFromHexString(questionId).equals(q._id)
+            questionId.equals(q.uuid)
         );
         if (!question) {
             return res.status(404).send({ message: "Question not found." });
@@ -449,13 +388,13 @@ const checkQuestion = async (req, res) => {
     console.log(req.body);
     try {
         if (id) {
-            const exercise = await Exercise.findById(id);
+            const exercise = await Exercise.findOne({ uuid: id });
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
 
             const question = exercise.questions.find((question) =>
-                ObjectId.createFromHexString(questionId).equals(question._id)
+                questionId.equals(question.uuid)
             );
             if (!question) {
                 return res.status(404).send({ message: "Question not found." });
@@ -587,6 +526,119 @@ const getAverageTimeSpent = async (req, res) => {
 };
 
 /**
+ * Gets the distribution of average scores across all students or a specific student if userId is provided
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
+const getAverageScoreDistribution = async (req, res) => {
+    const { userId } = req.query;
+    try {
+        let results = [
+            {
+                percentage: "0-49",
+                data: 0,
+                color: "red",
+            },
+            {
+                percentage: "50-59",
+                data: 0,
+                color: "purple",
+            },
+            {
+                percentage: "60-69",
+                data: 0,
+                color: "orange",
+            },
+            {
+                percentage: "70-79",
+                data: 0,
+                color: "yellow",
+            },
+            {
+                percentage: "80-89",
+                data: 0,
+                color: "blue",
+            },
+            {
+                percentage: "90-100",
+                data: 0,
+                color: "green",
+            },
+        ];
+        if (userId) {
+            const userExercises = await Exercise.find({
+                userId: ObjectId.createFromHexString(userId),
+                status: "Complete",
+            });
+            for (const exercise of userExercises) {
+                const score =
+                    (exercise.totalCorrect / exercise.questions.length) * 100;
+                let range = null;
+
+                if (score < 50) range = "0-49";
+                else if (score < 60) range = "50-59";
+                else if (score < 70) range = "60-69";
+                else if (score < 80) range = "70-79";
+                else if (score < 90) range = "80-89";
+                else if (score <= 100) range = "90-100";
+                else throw new Error("Unnatural average calculated: " + score);
+
+                const resultItem = results.find((r) => r.percentage === range);
+                if (resultItem) {
+                    resultItem.data += 1;
+                }
+            }
+        } else {
+            const users = await User.find();
+
+            for (const user of users) {
+                const userExercises = await Exercise.find({
+                    userId: user.vuNetId,
+                    status: "Complete",
+                });
+                if (userExercises.length > 0) {
+                    const average =
+                        userExercises.reduce(function (acc, exercise) {
+                            acc +=
+                                (exercise.totalCorrect /
+                                    exercise.questions.length) *
+                                100;
+                            return acc;
+                        }, 0) / userExercises.length;
+
+                    let range = null;
+                    if (average < 50) range = "0-49";
+                    else if (average < 60) range = "50-59";
+                    else if (average < 70) range = "60-69";
+                    else if (average < 80) range = "70-79";
+                    else if (average < 90) range = "80-89";
+                    else if (average <= 100) range = "90-100";
+                    else
+                        throw new Error(
+                            "Unnatural average calculated: " + average
+                        );
+
+                    const resultItem = results.find(
+                        (r) => r.percentage === range
+                    );
+                    if (resultItem) {
+                        resultItem.data += 1;
+                    }
+                }
+            }
+        }
+
+        return res.status(200).json(results);
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .send({ message: "Internal Server Error.", error: err });
+    }
+};
+
+/**
  * gets recent activity, optionally filtered by userId
  * @param {*} req - request details
  * @param {*} res - response details
@@ -608,10 +660,10 @@ const getRecentActivity = async (req, res) => {
         let results = [];
 
         for (const exercise of exercises) {
-            const user = await User.findById(exercise.userId);
-            const assignment = await ChapterAssignment.findById(
-                exercise.assignmentId
-            );
+            const user = await User.findOne({ vuNetId: exercise.userId });
+            const assignment = await Assignment.findOne({
+                uuid: exercise.assignmentId,
+            });
             const dateTimestamp = new Date(exercise.completedTimestamp);
             const now = new Date();
 
@@ -684,4 +736,5 @@ module.exports = {
     getAverageTimeSpent,
     getRecentActivity,
     submitRatings,
+    getAverageScoreDistribution,
 };
