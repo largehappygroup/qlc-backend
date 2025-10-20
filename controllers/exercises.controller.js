@@ -29,8 +29,8 @@ const createExercise = async (req, res) => {
     try {
         if (userId && assignmentId) {
             const search = await Exercise.findOne({
-                userId: ObjectId.createFromHexString(userId),
-                assignmentId: ObjectId.createFromHexString(assignmentId),
+                userId,
+                assignmentId,
             }).lean();
 
             const assignment = await Assignment.findOne({ uuid: assignmentId });
@@ -237,11 +237,11 @@ const getAllExercises = async (req, res) => {
         let filter = {};
 
         if (userId) {
-            filter.userId = ObjectId.createFromHexString(userId);
+            filter.userId = userId;
         }
 
         if (assignmentId) {
-            filter.assignmentId = ObjectId.createFromHexString(assignmentId);
+            filter.assignmentId = assignmentId;
         }
 
         if (date) {
@@ -462,7 +462,7 @@ const getAverageScore = async (req, res) => {
         let filter = { status: "Complete" };
 
         if (userId) {
-            filter.userId = ObjectId.createFromHexString(userId);
+            filter.userId = userId;
         }
         const exercises = await Exercise.find(filter);
         if (exercises.length > 0) {
@@ -497,7 +497,7 @@ const getAverageTimeSpent = async (req, res) => {
         let filter = { status: "Complete" };
 
         if (userId) {
-            filter.userId = ObjectId.createFromHexString(userId);
+            filter.userId = userId;
         }
         const exercises = await Exercise.find(filter);
         if (exercises.length > 0) {
@@ -569,7 +569,7 @@ const getAverageScoreDistribution = async (req, res) => {
         ];
         if (userId) {
             const userExercises = await Exercise.find({
-                userId: ObjectId.createFromHexString(userId),
+                userId: userId,
                 status: "Complete",
             });
             for (const exercise of userExercises) {
@@ -651,7 +651,7 @@ const getRecentActivity = async (req, res) => {
     try {
         let filter = { status: "Complete" };
         if (userId) {
-            filter.userId = ObjectId.createFromHexString(userId);
+            filter.userId = userId;
         }
 
         const exercises = await Exercise.find(filter)

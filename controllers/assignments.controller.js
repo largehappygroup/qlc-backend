@@ -159,8 +159,8 @@ const getAllAssignments = async (req, res) => {
     const { chapterId, date } = req.query;
     try {
         let filter = {};
-        if (chapterId && ObjectId.isValid(chapterId)) {
-            filter.chapterId = ObjectId.createFromHexString(chapterId);
+        if (chapterId) {
+            filter.chapterId = chapterId;
         }
 
         if (date) {

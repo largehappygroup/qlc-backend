@@ -50,8 +50,8 @@ const doesFeedbackExist = async (req, res) => {
     try {
         const { userId, chapterId } = req.query;
         const existingFeedback = await Feedback.findOne({
-            userId: ObjectId.createFromHexString(userId),
-            chapterId: ObjectId.createFromHexString(chapterId),
+            userId: userId,
+            chapterId: chapterId,
         });
         return res.status(200).json({ exists: existingFeedback !== null });
     } catch (error) {

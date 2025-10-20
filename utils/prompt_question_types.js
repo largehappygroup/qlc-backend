@@ -9,7 +9,7 @@ const questionTypes = JSON.parse(
 );
 /**
  * Fetches and compiles background context for a given assignment, including details about the assignment itself and its parent chapter, from the database.
- * @param {string} assignmentId - The MongoDB ObjectId of the assignment.
+ * @param {string} assignmentId - The MongoDB uuid of the assignment.
  * @returns {Promise<string>} A formatted string containing the combined chapter and assignment details.
  * @throws {Error} Throws an error if the assignment or chapter cannot be found.
  */
