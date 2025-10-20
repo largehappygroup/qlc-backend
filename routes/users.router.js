@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true });
 const multer = require("multer");
+const { authenticate } = require("../middleware/auth.js");
 
 const {
     createUser,
@@ -15,13 +16,13 @@ const {
 
 const upload = multer({ dest: "./uploads" });
 
-router.post("/upload", upload.single("file"), uploadUsers);
-router.post("/", createUser);
-router.put("/:id", editUser);
-router.get("/download", downloadUsers);
-router.get("/total-students", getTotalStudents);
-router.get("/", getAllUsers);
-router.get("/:id", getUser);
-router.delete("/:id", deleteUser);
+router.post("/upload", authenticate, upload.single("file"), uploadUsers);
+router.post("/", authenticate, createUser);
+router.put("/:id", authenticate, editUser);
+router.get("/download", authenticate, downloadUsers);
+router.get("/total-students", authenticate, getTotalStudents);
+router.get("/", authenticate, getAllUsers);
+router.get("/:id", authenticate, getUser);
+router.delete("/:id", authenticate, deleteUser);
 
 module.exports = router;

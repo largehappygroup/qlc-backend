@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true });
+const {authenticate} = require("../middleware/auth.js");
 
 const {
     createChapterAssignment,
@@ -9,10 +10,9 @@ const {
     getChapterAssignment,
 } = require("../controllers/chapterassignments.controller.js");
 
-router.post("/", createChapterAssignment);
-router.put("/:id", editChapterAssignment);
-router.get("/", getAllChapterAssignments);
-router.get("/:id", getChapterAssignment);
-router.delete("/:id", deleteChapterAssignment);
-
+router.post("/", authenticate, createChapterAssignment);
+router.put("/:id", authenticate, editChapterAssignment);
+router.get("/", authenticate, getAllChapterAssignments);
+router.get("/:id", authenticate, getChapterAssignment);
+router.delete("/:id", authenticate, deleteChapterAssignment);
 module.exports = router;
