@@ -1,5 +1,4 @@
-const ChapterAssignment = require("../models/ChapterAssignment.js");
-const Chapter = require("../models/Chapter.js");
+const Assignment = require("../models/Assignment.js");
 const crypto = require("crypto");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
@@ -9,7 +8,7 @@ const { ObjectId } = mongoose.Types;
  * @param {*} res - response object
  * @returns - response object with updated status
  */
-const createChapterAssignment = async (req, res) => {
+const createAssignment = async (req, res) => {
     const { chapterId, title, identifier, instructions, startDate, dueDate } =
         req.body;
     try {
@@ -21,7 +20,7 @@ const createChapterAssignment = async (req, res) => {
             startDate &&
             dueDate
         ) {
-            const chapterAssignment = new ChapterAssignment({
+            const assignment = new Assignment({
                 _id: new ObjectId(),
                 uuid: crypto.randomUUID(),
                 chapterId,
@@ -31,9 +30,9 @@ const createChapterAssignment = async (req, res) => {
                 startDate,
                 dueDate,
             });
-            await chapterAssignment.save();
+            await assignment.save();
 
-            return res.status(200).json(chapterAssignment);
+            return res.status(200).json(assignment);
         } else {
             return res
                 .status(400)
@@ -53,26 +52,26 @@ const createChapterAssignment = async (req, res) => {
  * @param {*} res - response object
  * @returns - response object, sends message with updated status
  */
-const deleteChapterAssignment = async (req, res) => {
+const deleteAssignment = async (req, res) => {
     const id = req.params?.id;
 
     try {
         if (id) {
-            const chapterAssignment = await ChapterAssignment.findOneAndDelete(
-                {uuid: id}
-            );
+            const assignment = await Assignment.findOneAndDelete({
+                uuid: id,
+            });
 
-            if (!chapterAssignment) {
+            if (!assignment) {
                 return res
                     .status(404)
-                    .send({ message: "Chapter assignment not found." });
+                    .send({ message: "Assignment not found." });
             }
 
             return res
                 .status(200)
-                .send({ message: "Successfully delete chapter assignment." });
+                .send({ message: "Successfully deleted assignment." });
         } else {
-            return res.status(400).send({ message: "Missing chapter ID." });
+            return res.status(400).send({ message: "Missing assignment ID." });
         }
     } catch (err) {
         console.error(err.message);
@@ -88,27 +87,28 @@ const deleteChapterAssignment = async (req, res) => {
  * @param {*} res - response object
  * @returns - response object with updated status
  */
-const editChapterAssignment = async (req, res) => {
-    const id = req.params?.id;
+const editAssignment = async (req, res) => {
+    const uuid = req.params?.uuid;
 
     try {
-        if (id) {
-            const chapterAssignment = await ChapterAssignment.findOneAndUpdate(
-                {uuid: id},
-                req.body
+        if (uuid) {
+            const assignment = await Assignment.findOneAndUpdate(
+                { uuid },
+                req.body,
+                { new: true }
             );
 
-            if (!chapterAssignment) {
+            if (!assignment) {
                 return res
                     .status(404)
-                    .send({ message: "Chapter assignment not found." });
+                    .send({ message: "Assignment not found." });
             }
 
-            return res.status(200).json(chapterAssignment);
+            return res.status(200).json(assignment);
         } else {
             return res
                 .status(400)
-                .send({ message: "Missing chapter assignment ID." });
+                .send({ message: "Missing assignment ID." });
         }
     } catch (err) {
         console.error(err.message);
@@ -122,22 +122,24 @@ const editChapterAssignment = async (req, res) => {
  * @param {*} res - response details
  * @returns - response details (with status)
  */
-const getChapterAssignment = async (req, res) => {
+const getAssignment = async (req, res) => {
     const id = req.params?.id;
 
     try {
         if (id) {
-            const chapterAssignment = await ChapterAssignment.findOne({uuid: id});
-            if (!chapterAssignment) {
+            const assignment = await Assignment.findOne({
+                uuid: id,
+            });
+            if (!assignment) {
                 return res
                     .status(404)
-                    .send({ message: "Chapter assignment not found." });
+                    .send({ message: "Assignment not found." });
             }
-            return res.status(200).json(chapterAssignment);
+            return res.status(200).json(assignment);
         } else {
             return res
                 .status(400)
-                .send({ message: "Missing chapter assignment ID." });
+                .send({ message: "Missing assignment ID." });
         }
     } catch (err) {
         console.error(err.message);
@@ -153,7 +155,7 @@ const getChapterAssignment = async (req, res) => {
  * @param {*} res - response details
  * @returns - array of chapter assignments (with status)
  */
-const getAllChapterAssignments = async (req, res) => {
+const getAllAssignments = async (req, res) => {
     const { chapterId, date } = req.query;
     try {
         let filter = {};
@@ -165,9 +167,9 @@ const getAllChapterAssignments = async (req, res) => {
             filter.startDate = { $lte: new Date(date) };
             filter.dueDate = { $gte: new Date(date) };
         }
-        
-        const chapterAssignments = await ChapterAssignment.find(filter);
-        return res.status(200).json(chapterAssignments);
+
+        const assignments = await Assignment.find(filter);
+        return res.status(200).json(assignments);
     } catch (err) {
         console.error(err.message);
         return res.status(500).send({ message: "Internal server error." });
@@ -175,9 +177,9 @@ const getAllChapterAssignments = async (req, res) => {
 };
 
 module.exports = {
-    createChapterAssignment,
-    deleteChapterAssignment,
-    editChapterAssignment,
-    getChapterAssignment,
-    getAllChapterAssignments,
+    createAssignment,
+    deleteAssignment,
+    editAssignment,
+    getAssignment,
+    getAllAssignments,
 };

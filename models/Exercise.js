@@ -25,7 +25,7 @@ const ExerciseSchema = new Schema({
     assignmentId: {
         type: String, // universally unique identifier for the assignment corresponding to exercise
         required: true,
-        ref: "ChapterAssignment",
+        ref: "Assignment",
     },
     questions: [
         {

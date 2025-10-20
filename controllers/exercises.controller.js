@@ -1,5 +1,5 @@
 const Exercise = require("../models/Exercise.js");
-const ChapterAssignment = require("../models/ChapterAssignment.js");
+const Assignment = require("../models/Assignment.js");
 const User = require("../models/User.js");
 const { ObjectId } = mongoose.Types;
 const crypto = require("crypto");
@@ -9,10 +9,7 @@ const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
 
 const { generateQuestions } = require("../services/questionGeneration.js");
-const {
-    fetchStudentCode,
-    doesSubmissionFolderExist,
-} = require("../utils/student_code.js");
+const { fetchStudentCode } = require("../utils/student_code.js");
 const {
     systemPrompt,
     userPrompt,
@@ -35,14 +32,14 @@ const createExercise = async (req, res) => {
                 assignmentId: ObjectId.createFromHexString(assignmentId),
             }).lean();
 
-            const assignment = await ChapterAssignment.findById(assignmentId);
+            const assignment = await Assignment.findOne({ uuid: assignmentId });
 
             if (search) {
                 for (let i = 0; i < search.questions.length; i++) {
                     const question = search.questions[i];
                     search.questions[i] = filterQuestion(question);
                 }
-                const author = await User.findById(search.authorId);
+                const author = await User.findOne({ vuNetId: search.authorId });
                 const studentCode = await fetchStudentCode(
                     author.email,
                     assignment.identifier
@@ -53,7 +50,7 @@ const createExercise = async (req, res) => {
                     .json({ exercise: search, studentCode: studentCode });
             }
 
-            const user = await User.findById(userId);
+            const user = await User.findOne({ vuNetId: userId });
             const author = await findSubmission(user, assignment);
 
             const studentCode = await fetchStudentCode(
@@ -143,7 +140,7 @@ const deleteExercise = async (req, res) => {
 
     try {
         if (id) {
-            const exercise = await Exercise.findOneAndDelete({uuid: id});
+            const exercise = await Exercise.findOneAndDelete({ uuid: id });
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -172,7 +169,10 @@ const editExercise = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const exercise = await Exercise.findOneAndUpdate({uuid: id}, req.body);
+            const exercise = await Exercise.findOneAndUpdate(
+                { uuid: id },
+                req.body
+            );
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -201,7 +201,7 @@ const getExercise = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const exercise = await Exercise.findOne({uuid: id}).lean();
+            const exercise = await Exercise.findOne({ uuid: id }).lean();
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -339,7 +339,7 @@ const submitRatings = async (req, res) => {
     const { questionId, ratings } = req.body;
 
     try {
-        const exercise = await Exercise.findById(exerciseId);
+        const exercise = await Exercise.findOne({ uuid: exerciseId });
         if (!exercise) {
             return res.status(404).send({ message: "Exercise not found." });
         }
@@ -388,7 +388,7 @@ const checkQuestion = async (req, res) => {
     console.log(req.body);
     try {
         if (id) {
-            const exercise = await Exercise.findOne({uuid: id});
+            const exercise = await Exercise.findOne({ uuid: id });
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -575,7 +575,7 @@ const getAverageScoreDistribution = async (req, res) => {
                 const score =
                     (exercise.totalCorrect / exercise.questions.length) * 100;
                 let range = null;
-                
+
                 if (score < 50) range = "0-49";
                 else if (score < 60) range = "50-59";
                 else if (score < 70) range = "60-69";
@@ -660,10 +660,10 @@ const getRecentActivity = async (req, res) => {
         let results = [];
 
         for (const exercise of exercises) {
-            const user = await User.findById(exercise.userId);
-            const assignment = await ChapterAssignment.findById(
-                exercise.assignmentId
-            );
+            const user = await User.findOne({ vuNetId: exercise.userId });
+            const assignment = await Assignment.findOne({
+                uuid: exercise.assignmentId,
+            });
             const dateTimestamp = new Date(exercise.completedTimestamp);
             const now = new Date();
 

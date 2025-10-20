@@ -91,7 +91,7 @@ const editUser = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const user = await User.findByIdAndUpdate(id, req.body);
+            const user = await User.findOneAndUpdate({ vuNetId: id }, req.body, { new: true });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -115,7 +115,7 @@ const getUser = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const user = await User.findById(id);
+            const user = await User.findOne({ vuNetId: id });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }

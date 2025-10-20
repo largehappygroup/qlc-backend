@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const Chapter = require("../models/Chapter.js");
-const ChapterAssignment = require("../models/ChapterAssignment.js");
+const Assignment = require("../models/Assignment.js");
 
 const questionTypes = JSON.parse(
     fs.readFileSync(path.join(__dirname, "question_types.json"), "utf8")
@@ -13,14 +13,14 @@ const questionTypes = JSON.parse(
  * @returns {Promise<string>} A formatted string containing the combined chapter and assignment details.
  * @throws {Error} Throws an error if the assignment or chapter cannot be found.
  */
-const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
+const fetchAssignmentAndChapterDetails = async (assignmentId) => {
     // Assignment details
     try {
-        const chapterAssignmentDetails = await ChapterAssignment.findById(
-            assignmentId
-        ).select("title instructions chapterId");
+        const assignmentDetails = await Assignment.findOne({
+            uuid: assignmentId,
+        }).select("title instructions chapterId");
 
-        if (!chapterAssignmentDetails) {
+        if (!assignmentDetails) {
             throw new Error("Assignment not found.");
         }
 
@@ -28,10 +28,10 @@ const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
             title: assignmentTitle,
             instructions: assignmentInstruction,
             chapterId,
-        } = chapterAssignmentDetails;
+        } = assignmentDetails;
 
         // Chapter details
-        const chapterDetails = await Chapter.findById(chapterId).select(
+        const chapterDetails = await Chapter.findOne({ uuid: chapterId }).select(
             "learningObjectives title description"
         );
 
@@ -111,7 +111,6 @@ Before generating the final JSON, you must perform a final check to ensure every
 If any directive is violated, you must revise the question until it is fully compliant.
 `;
 };
-
 
 /**
  * Backwards-compatible dummy studentCode function (synchronous), used when no params supplied.

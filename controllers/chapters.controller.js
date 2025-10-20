@@ -1,5 +1,5 @@
 const Chapter = require("../models/Chapter.js");
-const ChapterAssignment = require("../models/ChapterAssignment.js");
+const Assignment = require("../models/Assignment.js");
 const crypto = require("crypto");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
@@ -36,7 +36,7 @@ const createChapter = async (req, res) => {
             });
 
             if (assignments) {
-                const newAssignments = await ChapterAssignment.insertMany(
+                const newAssignments = await Assignment.insertMany(
                     assignments.map((assignment) => ({
                         ...assignment,
                         chapterId: chapter.uuid,
@@ -78,8 +78,8 @@ const deleteChapter = async (req, res) => {
                 return res.status(404).send({ message: "Chapter not found." });
             }
             if (chapter.assignmentIds) {
-                for (const assignment of chapter.assignmentIds) {
-                    await ChapterAssignment.findByIdAndDelete(assignment);
+                for (const assignmentId of chapter.assignmentIds) {
+                    await Assignment.findOneAndDelete({ uuid: assignmentId });
                 }
             }
 
@@ -150,14 +150,14 @@ const editChapter = async (req, res) => {
                     .filter((assignment) => assignment.uuid)
                     .map((assignment) => assignment.uuid);
 
-                const existingAssignments = await ChapterAssignment.find({
+                const existingAssignments = await Assignment.find({
                     chapterId: id,
                 });
                 // 1. Delete removed assignments
                 const toDelete = existingAssignments.filter(
                     (assignment) => !incomingAssignmentIds.includes(assignment.uuid)
                 );
-                await ChapterAssignment.deleteMany({
+                await Assignment.deleteMany({
                     uuid: { $in: toDelete.map((assignment) => assignment.uuid) },
                 });
 
@@ -165,11 +165,11 @@ const editChapter = async (req, res) => {
                 for (const a of assignments) {
                     if (a.uuid) {
                         // Update existing assignment
-                        await ChapterAssignment.findOneAndUpdate({ uuid: a.uuid }, a);
+                        await Assignment.findOneAndUpdate({ uuid: a.uuid }, a);
                         newAssignmentIds.push(a.uuid);
                     } else {
                         // Create new assignment
-                        const newA = await ChapterAssignment.create({
+                        const newA = await Assignment.create({
                             ...a,
                             chapterId: id,
                         });

@@ -4,9 +4,9 @@ const { ObjectId } = Schema.Types;
 
 /**
  * Details for the instructor to initialize
+ * a chapter assignment for a chapter
  */
-
-const ChapterAssignmentSchema = new Schema({
+const AssignmentSchema = new Schema({
     _id: {
         type: ObjectId, // mongodb generated unique id for the chapter assignment
         required: true,
@@ -45,7 +45,7 @@ const ChapterAssignmentSchema = new Schema({
 
 
 
-module.exports = ChapterAssignment = mongoose.model(
-    "chapterassignments",
-    ChapterAssignmentSchema
+module.exports = Assignment = mongoose.model(
+    "assignments",
+    AssignmentSchema
 );
