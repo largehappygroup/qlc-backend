@@ -57,16 +57,16 @@ const createExercise = async (req, res) => {
             } else {
                 const usersInStudy = await User.find({
                     studyParticipation: true,
+                    _id: { $ne: userId },
                 });
-                let potentialAuthors = usersInStudy.filter(
-                    (u) => u._id.toString() !== userId
-                );
 
-                while (potentialAuthors.length > 0) {
+                // First, try to find a submission from other participants (random order)
+                let candidates = usersInStudy.slice();
+                while (candidates.length > 0) {
                     const randomIndex = Math.floor(
-                        Math.random() * potentialAuthors.length
+                        Math.random() * candidates.length
                     );
-                    const selectedAuthor = potentialAuthors[randomIndex];
+                    const selectedAuthor = candidates[randomIndex];
 
                     const hasSubmission = await doesSubmissionFolderExist(
                         assignment.identifier,
@@ -78,18 +78,26 @@ const createExercise = async (req, res) => {
                         author = selectedAuthor;
                         break;
                     } else {
-                        potentialAuthors.splice(randomIndex, 1); // Remove the selected author and try again
+                        candidates.splice(randomIndex, 1);
                     }
                 }
 
+                // If no other participant had a submission, finally try the current user as a fallback
                 if (!authorId) {
-                    throw new Error(
-                        "No suitable author with a submission found."
+                    const hasSubmission = await doesSubmissionFolderExist(
+                        assignment.identifier,
+                        user.email
                     );
+                    if (hasSubmission) {
+                        authorId = user._id;
+                        author = user;
+                    } else {
+                        throw new Error(
+                            "No suitable author with a submission found."
+                        );
+                    }
                 }
             }
-
-            console.log("Selected authorId:", authorId);
 
             const studentCode = await fetchStudentCode(
                 author.email,

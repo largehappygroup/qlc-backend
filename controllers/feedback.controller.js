@@ -10,7 +10,7 @@ const { ObjectId } = mongoose.Types;
  */
 const createFeedback = async (req, res) => {
     try {
-        const { userId, exerciseId } = req.params;
+        const { userId, chapterId } = req.query;
         const {
             easeOfUnderstanding,
             reasonableQuestions,
@@ -20,8 +20,9 @@ const createFeedback = async (req, res) => {
         } = req.body;
         const date = new Date();
         const feedback = new Feedback({
+            _id: new ObjectId(),
             userId: ObjectId(userId),
-            exerciseId: ObjectId(exerciseId),
+            chapterId: ObjectId(chapterId),
             date,
             easeOfUnderstanding,
             reasonableQuestions,
