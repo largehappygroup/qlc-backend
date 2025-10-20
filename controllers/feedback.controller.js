@@ -21,8 +21,8 @@ const createFeedback = async (req, res) => {
         const date = new Date();
         const feedback = new Feedback({
             _id: new ObjectId(),
-            userId: ObjectId(userId),
-            chapterId: ObjectId(chapterId),
+            userId: ObjectId.createFromHexString(userId),
+            chapterId: ObjectId.createFromHexString(chapterId),
             date,
             easeOfUnderstanding,
             reasonableQuestions,
