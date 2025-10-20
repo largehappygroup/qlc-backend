@@ -39,6 +39,20 @@ const createFeedback = async (req, res) => {
     }
 };
 
+const doesFeedbackExist = async (req, res) => {
+    try {
+        const { userId, chapterId } = req.query;
+        const existingFeedback = await Feedback.findOne({
+            userId: ObjectId.createFromHexString(userId),
+            chapterId: ObjectId.createFromHexString(chapterId),
+        });
+        return res.status(200).json({ exists: existingFeedback !== null });
+    } catch (error) {
+        console.error("Error checking feedback existence:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 /**
  * downloadFeedback retrieves feedback entries for a specific user.
  * @param {*} req - Express request object
@@ -59,4 +73,5 @@ const downloadFeedback = async (req, res) => {
 module.exports = {
     createFeedback,
     downloadFeedback,
+    doesFeedbackExist
 };
