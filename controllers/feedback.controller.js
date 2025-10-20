@@ -1,6 +1,7 @@
 const Feedback = require("../models/Feedback");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
+const crypto = require("crypto");
 
 /**
  * createFeedback creates a new feedback entry.
@@ -22,6 +23,7 @@ const createFeedback = async (req, res) => {
 
         const feedback = new Feedback({
             _id: new ObjectId(),
+            uuid: crypto.randomUUID(),
             userId,
             chapterId,
             date,
