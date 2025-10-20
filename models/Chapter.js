@@ -26,6 +26,11 @@ const ChapterSchema = new Schema({
         type: Date,
         required: true // when the chapter should appear in the students' pages
     },
+    requestFeedback: {
+        type: Boolean,
+        required: true,
+        default: false // whether to prompt students for feedback on this chapter
+    }
 
 });
 

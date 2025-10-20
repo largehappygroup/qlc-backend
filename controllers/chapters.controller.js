@@ -7,7 +7,7 @@ const ChapterAssignment = require("../models/ChapterAssignment.js");
  * @returns - response object with updated status
  */
 const createChapter = async (req, res) => {
-    const { assignments, learningObjectives, title, description, releaseDate } =
+    const { assignments, learningObjectives, title, description, releaseDate, requestFeedback } =
         req.body;
 
     try {
@@ -20,6 +20,7 @@ const createChapter = async (req, res) => {
                 title,
                 description,
                 releaseDate,
+                requestFeedback,
             });
             await chapter.save();
 
@@ -111,6 +112,7 @@ const editChapter = async (req, res) => {
         learningObjectives,
         description,
         releaseDate,
+        requestFeedback
     } = req.body;
 
     try {
@@ -125,7 +127,8 @@ const editChapter = async (req, res) => {
             chapter.order = order;
             chapter.description = description;
             chapter.releaseDate = new Date(releaseDate);
-
+            chapter.requestFeedback = requestFeedback;
+           
             if (assignments) {
                 const newAssignmentIds = [];
 
