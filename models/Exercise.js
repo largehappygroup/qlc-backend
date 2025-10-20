@@ -7,18 +7,23 @@ const ExerciseSchema = new Schema({
         type: ObjectId, // mongodb generated unique id for the exercise
         required: true,
     },
+    uuid: {
+        type: String, // universally unique identifier for the exercise
+        required: true,
+        unique: true,
+    },
     userId: {
-        type: ObjectId, // mongodb generated unique id for the user answering questions
+        type: String, // vunetid for the user answering questions
         ref: "User",
         required: true,
     },
     authorId: {
-        type: ObjectId, // mongodb generated unique id for the author of the original assignment
+        type: String, // vunetid for the author of the original assignment
         ref: "User",
         required: true,
     },
     assignmentId: {
-        type: ObjectId, // mongodb generated unique id for the assignment corresponding to exercise
+        type: String, // universally unique identifier for the assignment corresponding to exercise
         required: true,
         ref: "ChapterAssignment",
     },
@@ -28,6 +33,12 @@ const ExerciseSchema = new Schema({
                 type: ObjectId, // mongodb generated unique id for the question in the exercise
                 required: true,
             },
+            uuid: {
+                type: String, // universally unique identifier for the question in the exercise
+                required: true,
+                unique: true,
+            },
+
             ratings: {
                 type: Map,
                 of: Number,

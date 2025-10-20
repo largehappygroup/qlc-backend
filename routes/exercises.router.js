@@ -13,12 +13,14 @@ const {
     getAverageTimeSpent,
     getRecentActivity,
     submitRatings,
+    getAverageScoreDistribution,
 } = require("../controllers/exercises.controller.js");
 
 router.post("/", createExercise);
 router.put("/:id/ratings", submitRatings);
 router.put("/:id", editExercise);
 router.get("/download", downloadExercises);
+router.get("/distribution", getAverageScoreDistribution);
 router.get("/average", getAverageScore);
 router.get("/recent-activity", getRecentActivity);
 router.get("/time-spent", getAverageTimeSpent);

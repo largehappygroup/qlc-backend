@@ -7,8 +7,17 @@ const { ObjectId } = Schema.Types;
  */
 
 const ChapterAssignmentSchema = new Schema({
+    _id: {
+        type: ObjectId, // mongodb generated unique id for the chapter assignment
+        required: true,
+    },
+    uuid: {
+        type: String, // universally unique identifier for the chapter assignment
+        required: true,
+        unique: true,
+    },
     chapterId: {
-        type: ObjectId, // mongodb generated unique id for the corresponding chapter
+        type: String, // universally unique identifier for the corresponding chapter
         required: true,
         ref: "Chapter",
     },

@@ -3,12 +3,21 @@ const { Schema } = mongoose;
 const { ObjectId } = Schema.Types;
 
 const ChapterSchema = new Schema({
+    _id: {
+        type: ObjectId, // mongodb generated unique id for the chapter
+        required: true,
+    },
+    uuid: {
+        type: String, // universally unique identifier for the chapter
+        required: true,
+        unique: true,
+    },
     order: {
         type: Number,
         required: true, // Chapter 1 vs. Chapter 2 etc
     },
     assignmentIds: [{
-        type: ObjectId, // corresponding assignment IDs for the chapter
+        type: String, // corresponding assignment IDs for the chapter
         ref: "ChapterAssignment",
     }],
     learningObjectives: [{

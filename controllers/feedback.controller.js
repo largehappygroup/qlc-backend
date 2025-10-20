@@ -19,10 +19,11 @@ const createFeedback = async (req, res) => {
             comments,
         } = req.body;
         const date = new Date();
+
         const feedback = new Feedback({
             _id: new ObjectId(),
-            userId: ObjectId.createFromHexString(userId),
-            chapterId: ObjectId.createFromHexString(chapterId),
+            userId,
+            chapterId,
             date,
             easeOfUnderstanding,
             reasonableQuestions,
@@ -39,6 +40,12 @@ const createFeedback = async (req, res) => {
     }
 };
 
+/**
+ * Checks if feedback exists for a given user and chapter.
+ * @param {*} req - Express request object
+ * @param {*} res - Express response object
+ * @returns - JSON object indicating existence of feedback
+ */
 const doesFeedbackExist = async (req, res) => {
     try {
         const { userId, chapterId } = req.query;

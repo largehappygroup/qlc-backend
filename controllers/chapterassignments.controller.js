@@ -1,5 +1,6 @@
 const ChapterAssignment = require("../models/ChapterAssignment.js");
 const Chapter = require("../models/Chapter.js");
+const crypto = require("crypto");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 /**
@@ -22,6 +23,7 @@ const createChapterAssignment = async (req, res) => {
         ) {
             const chapterAssignment = new ChapterAssignment({
                 _id: new ObjectId(),
+                uuid: crypto.randomUUID(),
                 chapterId,
                 title,
                 identifier,
@@ -29,9 +31,9 @@ const createChapterAssignment = async (req, res) => {
                 startDate,
                 dueDate,
             });
-            const newChapterAssignment = await chapterAssignment.save();
+            await chapterAssignment.save();
 
-            return res.status(200).json(newChapterAssignment);
+            return res.status(200).json(chapterAssignment);
         } else {
             return res
                 .status(400)
@@ -47,17 +49,17 @@ const createChapterAssignment = async (req, res) => {
 
 /**
  * Deletes a chapter assignment permanently
- * @param {*} req - request object
+ * @param {*} req - request object, with chapter assignment ID in params
  * @param {*} res - response object
- * @returns - response object with updated status
+ * @returns - response object, sends message with updated status
  */
 const deleteChapterAssignment = async (req, res) => {
     const id = req.params?.id;
 
     try {
         if (id) {
-            const chapterAssignment = await ChapterAssignment.findByIdAndDelete(
-                id
+            const chapterAssignment = await ChapterAssignment.findOneAndDelete(
+                {uuid: id}
             );
 
             if (!chapterAssignment) {
@@ -91,8 +93,8 @@ const editChapterAssignment = async (req, res) => {
 
     try {
         if (id) {
-            const chapterAssignment = await ChapterAssignment.findByIdAndUpdate(
-                id,
+            const chapterAssignment = await ChapterAssignment.findOneAndUpdate(
+                {uuid: id},
                 req.body
             );
 
@@ -125,7 +127,7 @@ const getChapterAssignment = async (req, res) => {
 
     try {
         if (id) {
-            const chapterAssignment = await ChapterAssignment.findById(id);
+            const chapterAssignment = await ChapterAssignment.findOne({uuid: id});
             if (!chapterAssignment) {
                 return res
                     .status(404)
@@ -146,10 +148,10 @@ const getChapterAssignment = async (req, res) => {
 };
 
 /**
- * Retrieves all chapters
- * @param {*} req - request details
+ * Retrieves all chapters assignments, with optional filtering by chapterId and date.
+ * @param {*} req - request details, with optional query parameters
  * @param {*} res - response details
- * @returns - response details (with status)
+ * @returns - array of chapter assignments (with status)
  */
 const getAllChapterAssignments = async (req, res) => {
     const { chapterId, date } = req.query;
