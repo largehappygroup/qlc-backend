@@ -38,6 +38,8 @@ const createChapter = async (req, res) => {
             if (assignments) {
                 const newAssignments = await Assignment.insertMany(
                     assignments.map((assignment) => ({
+                        _id: new ObjectId(),
+                        uuid: crypto.randomUUID(),
                         ...assignment,
                         chapterId: chapter.uuid,
                     }))
