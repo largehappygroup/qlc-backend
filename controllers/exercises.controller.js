@@ -16,7 +16,7 @@ const {
     userPrompt,
 } = require("../utils/prompt_question_types.js");
 
-const { filterQuestion } = require("../utils/exercise_helpers.js");
+const { filterQuestion, findSubmission } = require("../utils/exercise_helpers.js");
 
 /**
  * Creates a new exercise with AI.
