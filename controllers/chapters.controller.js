@@ -141,7 +141,7 @@ const editChapter = async (req, res) => {
 
     try {
         if (id) {
-            const chapter = await Chapter.findOne({ uuid: id }, { _id: 0 });
+            const chapter = await Chapter.findOne({ uuid: id });
 
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
@@ -201,7 +201,9 @@ const editChapter = async (req, res) => {
 
             await chapter.save();
 
-            return res.status(200).json(chapter);
+            const updatedChapter = await Chapter.findOne({ uuid: id }, { _id: 0 });
+
+            return res.status(200).json(updatedChapter);
         } else {
             return res.status(400).send({ message: "Missing chapter ID." });
         }
