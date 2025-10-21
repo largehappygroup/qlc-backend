@@ -42,7 +42,7 @@ const findSubmission = async (user, assignment) => {
         const usersInStudy = await User.find({
             studyParticipation: true,
             vuNetId: { $ne: user.vuNetId },
-        });
+        }, { _id: 0 });
         const candidates = usersInStudy.sort(() => Math.random() - 0.5); // create a copy
         // First, try to find a submission from other participants (random order)
         for (const candidate of candidates) {

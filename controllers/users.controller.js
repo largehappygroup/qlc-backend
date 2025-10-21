@@ -24,7 +24,7 @@ const createUser = async (req, res) => {
         const role = req.body.role || "student";
         
         if (firstName && lastName && vuNetId && email && role) {
-            let user = await User.findOne({ vuNetId });
+            let user = await User.findOne({ vuNetId }, { _id: 0 });
             if (!user) {
                 user = new User({
                     _id: new ObjectId(),
@@ -63,7 +63,7 @@ const deleteUser = async (req, res) => {
 
     try {
         if (id) {
-            const user = await User.findOneAndDelete({uuid: id});
+            const user = await User.findOneAndDelete({uuid: id}, { _id: 0 });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -91,7 +91,7 @@ const editUser = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const user = await User.findOneAndUpdate({ vuNetId: id }, req.body, { new: true });
+            const user = await User.findOneAndUpdate({ vuNetId: id }, req.body, { new: true, _id: 0 });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -115,7 +115,7 @@ const getUser = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const user = await User.findOne({ vuNetId: id });
+            const user = await User.findOne({ vuNetId: id }, { _id: 0 });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -147,7 +147,7 @@ const getAllUsers = async (req, res) => {
             filter.role = new RegExp(role, "i");
         }
 
-        const users = await User.find(filter);
+        const users = await User.find(filter, { _id: 0 });
 
         return res.status(200).send(users);
     } catch (err) {
@@ -172,7 +172,7 @@ const downloadUsers = async (req, res) => {
         if (role) {
             filter.role = new RegExp(role, "i");
         }
-        const users = await User.find(filter).lean();
+        const users = await User.find(filter, { _id: 0 }).lean();
         const opts = {
             transforms: [
                 flatten({ object: true, array: true, separator: "|" }),
@@ -202,7 +202,7 @@ const downloadUsers = async (req, res) => {
  */
 const getTotalStudents = async (req, res) => {
     try {
-        const students = await User.find({ role: "student" });
+        const students = await User.find({ role: "student" }, { _id: 0 });
         return res.status(200).json(students.length);
     } catch (err) {
         console.error(err);
@@ -234,7 +234,7 @@ const uploadUsers = async (req, res) => {
                 }
             })
             .on("data", async (row) => {
-                let user = await User.findOne({ vuNetId: row["vuNetId"] });
+                let user = await User.findOne({ vuNetId: row["vuNetId"] }, { _id: 0 });
                 if (!user) {
                     user = new User(row);
                 } else {
@@ -260,7 +260,7 @@ const uploadUsers = async (req, res) => {
  */
 const assignGroups = async (req, res) => {
     try {
-        const students = await User.find({ role: "student" });
+        const students = await User.find({ role: "student" }, { _id: 0 });
         for (const student of students) {
             if (
                 student.studyParticipation &&

@@ -73,27 +73,37 @@ const deleteChapter = async (req, res) => {
 
     try {
         if (id) {
-            const chapter = await Chapter.findOneAndDelete({ uuid: id });
+            const chapter = await Chapter.findOneAndDelete(
+                { uuid: id },
+                { _id: 0 }
+            );
 
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
             }
             if (chapter.assignmentIds) {
                 for (const assignmentId of chapter.assignmentIds) {
-                    await Assignment.findOneAndDelete({ uuid: assignmentId });
+                    await Assignment.findOneAndDelete(
+                        { uuid: assignmentId },
+                        { _id: 0 }
+                    );
                 }
             }
 
-            const chaptersToFixOrder = await Chapter.find({
-                order: { $gt: chapter.order },
-            });
+            const chaptersToFixOrder = await Chapter.find(
+                {
+                    order: { $gt: chapter.order },
+                },
+                { _id: 0 }
+            );
 
             for (const toFixChapter of chaptersToFixOrder) {
                 await Chapter.findOneAndUpdate(
                     { uuid: toFixChapter.uuid },
                     {
                         order: toFixChapter.order - 1,
-                    }
+                    },
+                    { _id: 0 }
                 );
             }
 
@@ -209,7 +219,7 @@ const editAllChapters = async (req, res) => {
     try {
         if (chapters) {
             for (const chapter of chapters) {
-                await Chapter.findOneAndUpdate({ uuid: chapter.uuid }, chapter);
+                await Chapter.findOneAndUpdate({ uuid: chapter.uuid }, chapter, { _id: 0 } );
             }
 
             return res
@@ -235,7 +245,7 @@ const getChapter = async (req, res) => {
 
     try {
         if (id) {
-            const chapter = await Chapter.findOne({ uuid: id });
+            const chapter = await Chapter.findOne({ uuid: id }, { _id: 0 });
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
             }
@@ -270,7 +280,7 @@ const getAllChapters = async (req, res) => {
                 $lt: new Date(date),
             };
         }
-        const chapters = await Chapter.find(filter);
+        const chapters = await Chapter.find(filter, { _id: 0 }).sort({ order: 1 });
         return res.status(200).json(chapters);
     } catch (err) {
         console.error(err.message);

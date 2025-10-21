@@ -51,10 +51,13 @@ const createFeedback = async (req, res) => {
 const doesFeedbackExist = async (req, res) => {
     try {
         const { userId, chapterId } = req.query;
-        const existingFeedback = await Feedback.findOne({
-            userId: userId,
-            chapterId: chapterId,
-        });
+        const existingFeedback = await Feedback.findOne(
+            {
+                userId: userId,
+                chapterId: chapterId,
+            },
+            { _id: 0 }
+        );
         return res.status(200).json({ exists: existingFeedback !== null });
     } catch (error) {
         console.error("Error checking feedback existence:", error);
@@ -71,7 +74,10 @@ const doesFeedbackExist = async (req, res) => {
 const downloadFeedback = async (req, res) => {
     try {
         const { userId } = req.params;
-        const feedbacks = await Feedback.find({ userId: ObjectId(userId) });
+        const feedbacks = await Feedback.find(
+            { userId: ObjectId(userId) },
+            { _id: 0 }
+        );
         return res.status(200).json(feedbacks);
     } catch (error) {
         console.error("Error downloading feedback:", error);
@@ -82,5 +88,5 @@ const downloadFeedback = async (req, res) => {
 module.exports = {
     createFeedback,
     downloadFeedback,
-    doesFeedbackExist
+    doesFeedbackExist,
 };

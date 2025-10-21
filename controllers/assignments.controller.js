@@ -59,7 +59,7 @@ const deleteAssignment = async (req, res) => {
         if (id) {
             const assignment = await Assignment.findOneAndDelete({
                 uuid: id,
-            });
+            }, { _id: 0 });
 
             if (!assignment) {
                 return res
@@ -95,7 +95,7 @@ const editAssignment = async (req, res) => {
             const assignment = await Assignment.findOneAndUpdate(
                 { uuid },
                 req.body,
-                { new: true }
+                { new: true, _id: 0 }
             );
 
             if (!assignment) {
@@ -106,9 +106,7 @@ const editAssignment = async (req, res) => {
 
             return res.status(200).json(assignment);
         } else {
-            return res
-                .status(400)
-                .send({ message: "Missing assignment ID." });
+            return res.status(400).send({ message: "Missing assignment ID." });
         }
     } catch (err) {
         console.error(err.message);
@@ -129,7 +127,7 @@ const getAssignment = async (req, res) => {
         if (id) {
             const assignment = await Assignment.findOne({
                 uuid: id,
-            });
+            }, { _id: 0 });
             if (!assignment) {
                 return res
                     .status(404)
@@ -137,9 +135,7 @@ const getAssignment = async (req, res) => {
             }
             return res.status(200).json(assignment);
         } else {
-            return res
-                .status(400)
-                .send({ message: "Missing assignment ID." });
+            return res.status(400).send({ message: "Missing assignment ID." });
         }
     } catch (err) {
         console.error(err.message);
@@ -168,7 +164,7 @@ const getAllAssignments = async (req, res) => {
             filter.dueDate = { $gte: new Date(date) };
         }
 
-        const assignments = await Assignment.find(filter);
+        const assignments = await Assignment.find(filter, { _id: 0 });
         return res.status(200).json(assignments);
     } catch (err) {
         console.error(err.message);

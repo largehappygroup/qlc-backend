@@ -31,19 +31,22 @@ const createExercise = async (req, res) => {
     const { userId, assignmentId } = req.query;
     try {
         if (userId && assignmentId) {
-            const search = await Exercise.findOne({
-                userId,
-                assignmentId,
-            }).lean();
+            const search = await Exercise.findOne(
+                {
+                    userId,
+                    assignmentId,
+                },
+                { _id: 0 }
+            ).lean();
 
-            const assignment = await Assignment.findOne({ uuid: assignmentId });
+            const assignment = await Assignment.findOne({ uuid: assignmentId }, { _id: 0 });
 
             if (search) {
                 for (let i = 0; i < search.questions.length; i++) {
                     const question = search.questions[i];
                     search.questions[i] = filterQuestion(question);
                 }
-                const author = await User.findOne({ vuNetId: search.authorId });
+                const author = await User.findOne({ vuNetId: search.authorId }, { _id: 0 });
                 const studentCode = await fetchStudentCode(
                     author.email,
                     assignment.identifier
@@ -54,7 +57,7 @@ const createExercise = async (req, res) => {
                     .json({ exercise: search, studentCode: studentCode });
             }
 
-            const user = await User.findOne({ vuNetId: userId });
+            const user = await User.findOne({ vuNetId: userId }, { _id: 0 });
             const author = await findSubmission(user, assignment);
 
             const studentCode = await fetchStudentCode(
@@ -144,7 +147,7 @@ const deleteExercise = async (req, res) => {
 
     try {
         if (id) {
-            const exercise = await Exercise.findOneAndDelete({ uuid: id });
+            const exercise = await Exercise.findOneAndDelete({ uuid: id }, { _id: 0 });
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -175,7 +178,8 @@ const editExercise = async (req, res) => {
         if (id) {
             const exercise = await Exercise.findOneAndUpdate(
                 { uuid: id },
-                req.body
+                req.body,
+                { new: true, _id: 0 }
             );
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
@@ -205,7 +209,7 @@ const getExercise = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const exercise = await Exercise.findOne({ uuid: id }).lean();
+            const exercise = await Exercise.findOne({ uuid: id }, { _id: 0 }).lean();
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -267,7 +271,7 @@ const getAllExercises = async (req, res) => {
             }
         }
 
-        const exercises = await Exercise.find(filter).lean();
+        const exercises = await Exercise.find(filter, { _id: 0 }).lean();
 
         for (let j = 0; j < exercises.length; j++) {
             const exercise = exercises[j];
@@ -314,7 +318,7 @@ const downloadExercises = async (req, res) => {
     const { fields } = req.query;
 
     try {
-        const exercises = await Exercise.find().lean();
+        const exercises = await Exercise.find({}, { _id: 0 }).lean();
         const opts = {
             transforms: [
                 unwind({
@@ -343,7 +347,7 @@ const submitRatings = async (req, res) => {
     const { questionId, ratings } = req.body;
 
     try {
-        const exercise = await Exercise.findOne({ uuid: exerciseId });
+        const exercise = await Exercise.findOne({ uuid: exerciseId }, { _id: 0 });
         if (!exercise) {
             return res.status(404).send({ message: "Exercise not found." });
         }
@@ -390,13 +394,13 @@ const checkQuestion = async (req, res) => {
     console.log(req.body);
     try {
         if (id) {
-            const exercise = await Exercise.findOne({ uuid: id });
+            const exercise = await Exercise.findOne({ uuid: id }, { _id: 0 });
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
 
-            const question = exercise.questions.find((question) =>
-                questionId === question.uuid
+            const question = exercise.questions.find(
+                (question) => questionId === question.uuid
             );
             if (!question) {
                 return res.status(404).send({ message: "Question not found." });
@@ -465,7 +469,7 @@ const getAverageScore = async (req, res) => {
         if (userId) {
             filter.userId = userId;
         }
-        const exercises = await Exercise.find(filter);
+        const exercises = await Exercise.find(filter, { _id: 0 });
         if (exercises.length > 0) {
             const average =
                 exercises.reduce(function (acc, exercise) {
@@ -500,7 +504,7 @@ const getAverageTimeSpent = async (req, res) => {
         if (userId) {
             filter.userId = userId;
         }
-        const exercises = await Exercise.find(filter);
+        const exercises = await Exercise.find(filter, { _id: 0 });
         if (exercises.length > 0) {
             const timeSpent =
                 exercises.reduce(function (acc, exercise) {
@@ -572,7 +576,7 @@ const getAverageScoreDistribution = async (req, res) => {
             const userExercises = await Exercise.find({
                 userId: userId,
                 status: "Complete",
-            });
+            }, { _id: 0 });
             for (const exercise of userExercises) {
                 const score =
                     (exercise.totalCorrect / exercise.questions.length) * 100;
@@ -592,13 +596,13 @@ const getAverageScoreDistribution = async (req, res) => {
                 }
             }
         } else {
-            const users = await User.find();
+            const users = await User.find({}, { _id: 0 });
 
             for (const user of users) {
                 const userExercises = await Exercise.find({
                     userId: user.vuNetId,
                     status: "Complete",
-                });
+                }, { _id: 0 });
                 if (userExercises.length > 0) {
                     const average =
                         userExercises.reduce(function (acc, exercise) {
@@ -655,17 +659,17 @@ const getRecentActivity = async (req, res) => {
             filter.userId = userId;
         }
 
-        const exercises = await Exercise.find(filter)
+        const exercises = await Exercise.find(filter, { _id: 0 })
             .sort({ completedTimestamp: -1 })
             .limit(10);
 
         let results = [];
 
         for (const exercise of exercises) {
-            const user = await User.findOne({ vuNetId: exercise.userId });
+            const user = await User.findOne({ vuNetId: exercise.userId }, { _id: 0 });
             const assignment = await Assignment.findOne({
                 uuid: exercise.assignmentId,
-            });
+            }, { _id: 0 });
             const dateTimestamp = new Date(exercise.completedTimestamp);
             const now = new Date();
 

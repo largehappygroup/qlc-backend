@@ -18,7 +18,7 @@ const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
     try {
         const assignmentDetails = await Assignment.findOne({
             uuid: assignmentId,
-        }).select("title instructions chapterId");
+        }, { _id: 0 }).select("title instructions chapterId");
 
         if (!assignmentDetails) {
             throw new Error("Assignment not found.");
@@ -31,7 +31,7 @@ const fetchAssignmentAndChaptertDetails = async (assignmentId) => {
         } = chapterAssignmentDetails;
 
         // Chapter details
-        const chapterDetails = await Chapter.findOne({ uuid: chapterId }).select(
+        const chapterDetails = await Chapter.findOne({ uuid: chapterId }, { _id: 0 }).select(
             "learningObjectives title description"
         );
 
