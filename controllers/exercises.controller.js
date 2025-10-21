@@ -16,7 +16,10 @@ const {
     userPrompt,
 } = require("../utils/prompt_question_types.js");
 
-const { filterQuestion, findSubmission } = require("../utils/exercise_helpers.js");
+const {
+    filterQuestion,
+    findSubmission,
+} = require("../utils/exercise_helpers.js");
 
 /**
  * Creates a new exercise with AI.
@@ -345,9 +348,7 @@ const submitRatings = async (req, res) => {
             return res.status(404).send({ message: "Exercise not found." });
         }
 
-        const question = exercise.questions.find((q) =>
-            questionId.equals(q.uuid)
-        );
+        const question = exercise.questions.find((q) => questionId === q.uuid);
         if (!question) {
             return res.status(404).send({ message: "Question not found." });
         }
@@ -395,7 +396,7 @@ const checkQuestion = async (req, res) => {
             }
 
             const question = exercise.questions.find((question) =>
-                questionId.equals(question.uuid)
+                questionId === question.uuid
             );
             if (!question) {
                 return res.status(404).send({ message: "Question not found." });
