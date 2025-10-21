@@ -18,7 +18,7 @@ const UserAnswerSchema = new Schema({
 });
 
 const QuestionSchema = new Schema({
-    id: {
+    _id: {
         type: ObjectId,
         required: true,
     },
