@@ -39,14 +39,20 @@ const createExercise = async (req, res) => {
                 { _id: 0 }
             ).lean();
 
-            const assignment = await Assignment.findOne({ uuid: assignmentId }, { _id: 0 });
+            const assignment = await Assignment.findOne(
+                { uuid: assignmentId },
+                { _id: 0 }
+            );
 
             if (search) {
                 for (let i = 0; i < search.questions.length; i++) {
                     const question = search.questions[i];
                     search.questions[i] = filterQuestion(question);
                 }
-                const author = await User.findOne({ vuNetId: search.authorId }, { _id: 0 });
+                const author = await User.findOne(
+                    { vuNetId: search.authorId },
+                    { _id: 0 }
+                );
                 const studentCode = await fetchStudentCode(
                     author.email,
                     assignment.identifier
@@ -147,7 +153,10 @@ const deleteExercise = async (req, res) => {
 
     try {
         if (id) {
-            const exercise = await Exercise.findOneAndDelete({ uuid: id }, { _id: 0 });
+            const exercise = await Exercise.findOneAndDelete(
+                { uuid: id },
+                { _id: 0 }
+            );
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -209,7 +218,10 @@ const getExercise = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const exercise = await Exercise.findOne({ uuid: id }, { _id: 0 }).lean();
+            const exercise = await Exercise.findOne(
+                { uuid: id },
+                { _id: 0 }
+            ).lean();
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -394,7 +406,7 @@ const checkQuestion = async (req, res) => {
     console.log(req.body);
     try {
         if (id) {
-            const exercise = await Exercise.findOne({ uuid: id }, { _id: 0 });
+            const exercise = await Exercise.findOne({ uuid: id });
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -440,7 +452,7 @@ const checkQuestion = async (req, res) => {
                 },
             ];
 
-            exercise.save();
+            await exercise.save();
 
             return res.status(200).json({ result });
         } else {
@@ -573,10 +585,13 @@ const getAverageScoreDistribution = async (req, res) => {
             },
         ];
         if (userId) {
-            const userExercises = await Exercise.find({
-                userId: userId,
-                status: "Complete",
-            }, { _id: 0 });
+            const userExercises = await Exercise.find(
+                {
+                    userId: userId,
+                    status: "Complete",
+                },
+                { _id: 0 }
+            );
             for (const exercise of userExercises) {
                 const score =
                     (exercise.totalCorrect / exercise.questions.length) * 100;
@@ -599,10 +614,13 @@ const getAverageScoreDistribution = async (req, res) => {
             const users = await User.find({}, { _id: 0 });
 
             for (const user of users) {
-                const userExercises = await Exercise.find({
-                    userId: user.vuNetId,
-                    status: "Complete",
-                }, { _id: 0 });
+                const userExercises = await Exercise.find(
+                    {
+                        userId: user.vuNetId,
+                        status: "Complete",
+                    },
+                    { _id: 0 }
+                );
                 if (userExercises.length > 0) {
                     const average =
                         userExercises.reduce(function (acc, exercise) {
@@ -666,10 +684,16 @@ const getRecentActivity = async (req, res) => {
         let results = [];
 
         for (const exercise of exercises) {
-            const user = await User.findOne({ vuNetId: exercise.userId }, { _id: 0 });
-            const assignment = await Assignment.findOne({
-                uuid: exercise.assignmentId,
-            }, { _id: 0 });
+            const user = await User.findOne(
+                { vuNetId: exercise.userId },
+                { _id: 0 }
+            );
+            const assignment = await Assignment.findOne(
+                {
+                    uuid: exercise.assignmentId,
+                },
+                { _id: 0 }
+            );
             const dateTimestamp = new Date(exercise.completedTimestamp);
             const now = new Date();
 

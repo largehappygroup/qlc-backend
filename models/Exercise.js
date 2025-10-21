@@ -1,9 +1,12 @@
 const mongoose = require("mongoose");
-const { type } = require("os");
 const { Schema } = mongoose;
 const { ObjectId } = Schema.Types;
 
 const UserAnswerSchema = new Schema({
+    _id: {
+        type: ObjectId,
+        required: true,
+    },
     timeStamp: {
         type: Date, // timestamp for when the user submitted their answer
         required: true,
@@ -15,12 +18,15 @@ const UserAnswerSchema = new Schema({
 });
 
 const QuestionSchema = new Schema({
+    id: {
+        type: ObjectId,
+        required: true,
+    },
     uuid: {
         type: String, // universally unique identifier for the question in the exercise
         required: true,
         unique: true,
     },
-
     ratings: {
         type: Map,
         of: Number,
