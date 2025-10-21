@@ -2,11 +2,65 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 const { ObjectId } = Schema.Types;
 
-const ExerciseSchema = new Schema({
-    _id: {
-        type: ObjectId, // mongodb generated unique id for the exercise
-        required: true,
+const UserAnswerSchema = new Schema(
+    {
+        timeStamp: {
+            type: Date, // timestamp for when the user submitted their answer
+            required: true,
+        },
+        selectedAnswer: {
+            type: String, // the user's chosen answer
+            required: true,
+        },
     },
+    { _id: false }
+);
+
+const QuestionSchema = new Schema(
+    {
+        uuid: {
+            type: String, // universally unique identifier for the question in the exercise
+            required: true,
+            unique: true,
+        },
+
+        ratings: {
+            type: Map,
+            of: Number,
+            default: () => new Map(),
+        },
+        query: {
+            type: String, // prompt/question for the exercise
+            required: true,
+        },
+        type: {
+            type: String, // format for the question
+            enum: ["multiple-choice", "coding"],
+            required: true,
+        },
+        hints: [{ type: String }], // generated as the user needs, no more than 3
+        correctAnswer: {
+            type: String, // the true answer, aggregate together with otherAnswers as availableAnswers
+            required: true,
+        },
+        otherAnswers: [{ type: String }], // incorrect answers, aggregate as availableAnswers
+        explanation: {
+            type: String, // explanation for the correct answer
+            required: true,
+        },
+        userAnswers: [UserAnswerSchema],
+        timeSpent: {
+            type: Number, // total amount of time spent in seconds on the question
+            required: true,
+        },
+        correct: {
+            type: Boolean, // whether the user got the answer correct the first time
+        },
+    },
+    { _id: false }
+);
+
+const ExerciseSchema = new Schema({
     uuid: {
         type: String, // universally unique identifier for the exercise
         required: true,
@@ -27,67 +81,7 @@ const ExerciseSchema = new Schema({
         required: true,
         ref: "Assignment",
     },
-    questions: [
-        {
-            _id: {
-                type: ObjectId, // mongodb generated unique id for the question in the exercise
-                required: true,
-            },
-            uuid: {
-                type: String, // universally unique identifier for the question in the exercise
-                required: true,
-                unique: true,
-            },
-
-            ratings: {
-                type: Map,
-                of: Number,
-                default: () => new Map(),
-            },
-            query: {
-                type: String, // prompt/question for the exercise
-                required: true,
-            },
-            type: {
-                type: String, // format for the question
-                enum: ["multiple-choice", "coding"],
-                required: true,
-            },
-            hints: [{ type: String }], // generated as the user needs, no more than 3
-            correctAnswer: {
-                type: String, // the true answer, aggregate together with otherAnswers as availableAnswers
-                required: true,
-            },
-            otherAnswers: [{ type: String }], // incorrect answers, aggregate as availableAnswers
-            explanation: {
-                type: String, // explanation for the correct answer
-                required: true,
-            },
-            userAnswers: [
-                {
-                    _id: {
-                        type: ObjectId, // mongodb generated unique id for the user's answer
-                        required: true,
-                    },
-                    timeStamp: {
-                        type: Date, // timestamp for when the user submitted their answer
-                        required: true,
-                    },
-                    selectedAnswer: {
-                        type: String, // the user's chosen answer
-                        required: true,
-                    },
-                },
-            ],
-            timeSpent: {
-                type: Number, // total amount of time spent in seconds on the question
-                required: true,
-            },
-            correct: {
-                type: Boolean, // whether the user got the answer correct the first time
-            },
-        },
-    ],
+    questions: [QuestionSchema], // list of questions in the exercise
     status: {
         type: String, // status indicators for the user
         required: true,
