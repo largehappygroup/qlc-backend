@@ -25,11 +25,11 @@
     "definition": "This question type tests a student's ability to analyze how code behaves when given inputs at the boundaries of the expected range or invalid inputs altogether.",
     "generation_directives": [
       "Identify a method or code block that receives input either directly from the user or from other methods.",
-      "Your analysis must extend beyond direct user input (e.g., from a Scanner). You must also inspect methods that receive parameters from other parts of the program.",
-      "The correct answer must accurately describe the code's resulting behavior or output for that specific edge case.",
-      "The incorrect answers should describe other plausible but incorrect behaviors.",
+      "Provide concrete, new input values for all required variables or parameters.",
+      "The correct answer must accurately describe the output for that specific edge case.",
+      "The incorrect answers should describe other plausible but incorrect outputs.",
       "Every part of the generated output must be directly tied to the provided code submission.",
-      "Do not ask questions that have anything to do with the Random class or it's seed. Do not even mention seed.",
+      "The question must target the exact line of code where the runtime error is thrown, not the line where a variable is simply assigned a problematic value.",
       "All answer options must be parallel in structure and similar in length. Avoid making the correct answer noticeably different from the incorrect ones."
     ],
     "examples": [
@@ -110,12 +110,13 @@
     ]
   },
   "Method Relationship: Direct Call": {
-    "definition": "This question type tests the student's ability to trace the immediate flow of execution from one user-defined method to another.",
+    "definition": "This question type tests the student's ability to trace which user-defined method/function is called by a method/function.",
     "generation_directives": [
-      "Select a user-defined method from the student's code that makes a direct call to another user-defined method.",
-      "The correct answer must be *ClassName.methodName*, a user-defined method, that is called.",
-      "DO NOT ask questions whose correct answer is 'None'.",
-      "The incorrect answers should be other method names from the students' code or generic method names.",
+      "Strictly, select a user-defined method from the student's code that makes a call to another method/function.",
+      "AVOID methods that do not call any other methods/functions.",
+      "The correct answer must be a method/function that is called.",
+      "The incorrect answers should be other method/function names from the students' code or generic method/function names.",
+      "DO NOT ask questions about the Deck class and Player.getCard & Player.addCard methods.",
       "Every part of the generated output must be directly tied to the provided code submission."
     ],
     "examples": [
@@ -152,8 +153,10 @@
     "definition": "This question type tests the student's understanding of arithmetic (`+`, `-`, `*`, `/`, `%`), relational (`>`, `<`, `==`), and logical (`&&`, `||`, `!`) operators.",
     "generation_directives": [
       "Identify an arithmetic, relational or boolean expression from the student's code.",
-      "Provide concrete, new input values for all required variables used in the expression. List the variables along with their new values.",
+      "Provide concrete, new input values for all required variables used in the expression.",
+      "Make sure that the variables have the correct data types.",
       "The correct answer must be the single, correct result of the evaluation.",
+      "DO NOT make your own expressions. Only use expressions that are already present in the student's code.",
       "The incorrect answers must include incorrect outcomes based on common miscalculations (like operator precedence errors for arithmetic expressions or logical fallacies for boolean ones).",
       "Every part of the generated output must be directly tied to the provided code submission."
     ],
