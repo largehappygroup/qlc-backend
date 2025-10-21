@@ -36,17 +36,15 @@ const createChapter = async (req, res) => {
             });
 
             if (assignments) {
-                const newAssignments = await Assignment.insertMany(
-                    assignments.map((assignment) => ({
+                for (const assignment of assignments) {
+                    const newAssignment = new Assignment({
+                        ...assignment,
                         _id: new ObjectId(),
                         uuid: crypto.randomUUID(),
-                        ...assignment,
-                        chapterId: chapter.uuid,
-                    }))
-                );
-                chapter.assignmentIds = newAssignments.map(
-                    (assignment) => assignment.uuid
-                );
+                    });
+                    await newAssignment.save();
+                    chapter.assignmentIds.push(newAssignment.uuid);
+                }
             }
             await chapter.save();
             return res.status(200).json(chapter);
@@ -74,7 +72,7 @@ const deleteChapter = async (req, res) => {
 
     try {
         if (id) {
-            const chapter = await Chapter.findOneAndDelete({uuid: id});
+            const chapter = await Chapter.findOneAndDelete({ uuid: id });
 
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
@@ -132,7 +130,7 @@ const editChapter = async (req, res) => {
 
     try {
         if (id) {
-            const chapter = await Chapter.findOne({uuid: id});
+            const chapter = await Chapter.findOne({ uuid: id });
 
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
@@ -157,10 +155,13 @@ const editChapter = async (req, res) => {
                 });
                 // 1. Delete removed assignments
                 const toDelete = existingAssignments.filter(
-                    (assignment) => !incomingAssignmentIds.includes(assignment.uuid)
+                    (assignment) =>
+                        !incomingAssignmentIds.includes(assignment.uuid)
                 );
                 await Assignment.deleteMany({
-                    uuid: { $in: toDelete.map((assignment) => assignment.uuid) },
+                    uuid: {
+                        $in: toDelete.map((assignment) => assignment.uuid),
+                    },
                 });
 
                 // 2. Process new and updated assignments
@@ -233,7 +234,7 @@ const getChapter = async (req, res) => {
 
     try {
         if (id) {
-            const chapter = await Chapter.findOne({uuid: id});
+            const chapter = await Chapter.findOne({ uuid: id });
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
             }
