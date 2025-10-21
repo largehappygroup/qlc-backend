@@ -141,7 +141,7 @@ const editChapter = async (req, res) => {
 
     try {
         if (id) {
-            const chapter = await Chapter.findOne({ uuid: id });
+            const chapter = await Chapter.findOne({ uuid: id }, { _id: 0 });
 
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
@@ -183,12 +183,13 @@ const editChapter = async (req, res) => {
                         newAssignmentIds.push(a.uuid);
                     } else {
                         // Create new assignment
-                        const newA = await new Assignment({
+                        const newA = new Assignment({
                             _id: new ObjectId(),
                             uuid: crypto.randomUUID(),
                             ...a,
                             chapterId: id,
                         });
+                        await newA.save();
                         newAssignmentIds.push(newA.uuid);
                     }
                 }
@@ -221,7 +222,11 @@ const editAllChapters = async (req, res) => {
     try {
         if (chapters) {
             for (const chapter of chapters) {
-                await Chapter.findOneAndUpdate({ uuid: chapter.uuid }, chapter, { _id: 0 } );
+                await Chapter.findOneAndUpdate(
+                    { uuid: chapter.uuid },
+                    chapter,
+                    { _id: 0 }
+                );
             }
 
             return res
@@ -282,7 +287,9 @@ const getAllChapters = async (req, res) => {
                 $lt: new Date(date),
             };
         }
-        const chapters = await Chapter.find(filter, { _id: 0 }).sort({ order: 1 });
+        const chapters = await Chapter.find(filter, { _id: 0 }).sort({
+            order: 1,
+        });
         return res.status(200).json(chapters);
     } catch (err) {
         console.error(err.message);
