@@ -68,9 +68,8 @@ const findSubmission = async (user, assignment) => {
                 throw new Error("No suitable author with a submission found.");
             }
         }
-
-        return author
     }
+    return author;
 };
 
 module.exports = {
