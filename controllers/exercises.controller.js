@@ -347,7 +347,7 @@ const submitRatings = async (req, res) => {
     const { questionId, ratings } = req.body;
 
     try {
-        const exercise = await Exercise.findOne({ uuid: exerciseId }, { _id: 0 });
+        const exercise = await Exercise.findOne({ uuid: exerciseId });
         if (!exercise) {
             return res.status(404).send({ message: "Exercise not found." });
         }
