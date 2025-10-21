@@ -184,9 +184,9 @@ const editChapter = async (req, res) => {
                     } else {
                         // Create new assignment
                         const newA = new Assignment({
+                            ...a,
                             _id: new ObjectId(),
                             uuid: crypto.randomUUID(),
-                            ...a,
                             chapterId: id,
                         });
                         await newA.save();
