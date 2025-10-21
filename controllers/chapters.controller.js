@@ -41,6 +41,7 @@ const createChapter = async (req, res) => {
                         ...assignment,
                         _id: new ObjectId(),
                         uuid: crypto.randomUUID(),
+                        chapterId: chapter.uuid,
                     });
                     await newAssignment.save();
                     chapter.assignmentIds.push(newAssignment.uuid);
