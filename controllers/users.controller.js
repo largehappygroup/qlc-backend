@@ -22,7 +22,7 @@ const createUser = async (req, res) => {
         const lastName = req.headers["remote-user-family-name"];
         const vuNetId = req.headers["remote-user-vunetid"];
         const role = req.body.role || "student";
-        
+        const studyGroup = Math.floor(Math.random() * 2) == 1 ? "A" : "B";
         if (firstName && lastName && vuNetId && email && role) {
             let user = await User.findOne({ vuNetId }, { _id: 0 });
             if (!user) {
@@ -33,6 +33,7 @@ const createUser = async (req, res) => {
                     vuNetId,
                     email,
                     role,
+                    studyGroup,
                 });
                 await user.save();
             }
@@ -63,7 +64,7 @@ const deleteUser = async (req, res) => {
 
     try {
         if (id) {
-            const user = await User.findOneAndDelete({uuid: id}, { _id: 0 });
+            const user = await User.findOneAndDelete({ uuid: id }, { _id: 0 });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -91,7 +92,11 @@ const editUser = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const user = await User.findOneAndUpdate({ vuNetId: id }, req.body, { new: true, _id: 0 });
+            const user = await User.findOneAndUpdate(
+                { vuNetId: id },
+                req.body,
+                { new: true, _id: 0 }
+            );
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -193,7 +198,6 @@ const downloadUsers = async (req, res) => {
     }
 };
 
-
 /**
  * Gets the total number of students
  * @param {*} req
@@ -234,7 +238,10 @@ const uploadUsers = async (req, res) => {
                 }
             })
             .on("data", async (row) => {
-                let user = await User.findOne({ vuNetId: row["vuNetId"] }, { _id: 0 });
+                let user = await User.findOne(
+                    { vuNetId: row["vuNetId"] },
+                    { _id: 0 }
+                );
                 if (!user) {
                     user = new User(row);
                 } else {
@@ -252,36 +259,6 @@ const uploadUsers = async (req, res) => {
     }
 };
 
-/**
- * assigns students to group A or B randomly if they are participating in the study and not already assigned
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
- */
-const assignGroups = async (req, res) => {
-    try {
-        const students = await User.find({ role: "student" }, { _id: 0 });
-        for (const student of students) {
-            if (
-                student.studyParticipation &&
-                (!student.studyGroup ||
-                    student.studyGroup != "A" ||
-                    student.studyGroup != "B")
-            ) {
-                student.studyGroup =
-                    Math.floor(Math.random() * 2) == 1 ? "A" : "B";
-            }
-            student.save();
-        }
-        return res.status(200).send({ message: "Success." });
-    } catch (err) {
-        console.error(err);
-        return res
-            .status(500)
-            .send({ message: "Internal Server Error", error: err });
-    }
-};
-
 module.exports = {
     createUser,
     deleteUser,
@@ -291,5 +268,4 @@ module.exports = {
     downloadUsers,
     uploadUsers,
     getTotalStudents,
-    assignGroups,
 };

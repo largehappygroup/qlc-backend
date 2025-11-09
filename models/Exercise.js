@@ -101,6 +101,10 @@ const ExerciseSchema = new Schema({
     },
     totalTimeSpent: { type: Number, required: true }, // total amount of time spent in seconds on all questions
     totalCorrect: { type: Number, required: true }, // number of questions the user got correct the first time they saw the question
+    studentCode: {
+        type: String, // the student's code submission for coding exercises
+        required: true,
+    },
 });
 
 module.exports = Exercise = mongoose.model("exercise", ExerciseSchema);

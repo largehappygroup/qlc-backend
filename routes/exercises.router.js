@@ -4,6 +4,7 @@ const { authenticate } = require("../middleware/auth.js");
 
 const {
     createExercise,
+    createExercises,
     deleteExercise,
     editExercise,
     getAllExercises,
@@ -18,6 +19,7 @@ const {
 } = require("../controllers/exercises.controller.js");
 
 router.post("/", authenticate, createExercise);
+router.post("/batch", authenticate, createExercises);
 router.put("/:id/ratings", authenticate, submitRatings);
 router.put("/:id", authenticate, editExercise);
 router.get("/download", authenticate, downloadExercises);

@@ -21,6 +21,68 @@ const {
     findSubmission,
 } = require("../utils/exercise_helpers.js");
 
+const generateExercise = async (userId, assignmentId) => {
+    const user = await User.findOne({ vuNetId: userId }, { _id: 0 });
+    const author = await findSubmission(user, assignment);
+    const assignment = await Assignment.findOne(
+        { uuid: assignmentId },
+        { _id: 0 }
+    );
+    const studentCode = await fetchStudentCode(
+        author.email,
+        assignment.identifier
+    );
+
+    const questionTypes = ["Variable State Trace", "Execution Path Analysis"];
+
+    let questions = [];
+
+    let numberOfQuestions = 5;
+    const typesCount = questionTypes.length;
+    const base = Math.floor(numberOfQuestions / typesCount);
+    const remainder = numberOfQuestions % typesCount;
+
+    for (let i = 0; i < typesCount; i++) {
+        const qt = questionTypes[i];
+        const count = i === typesCount - 1 ? base + remainder : base;
+
+        if (count <= 0) continue;
+
+        const systemPromptText = systemPrompt(qt, count);
+        const userPromptText = await userPrompt(studentCode);
+        let questionsForType = await generateQuestions(
+            systemPromptText,
+            userPromptText
+        );
+
+        // Add additional fields to each question
+        questionsForType = questionsForType.map((question) => ({
+            ...question,
+            _id: new mongoose.Types.ObjectId(),
+            uuid: crypto.randomUUID(),
+            difficulty: "easy",
+            timeSpent: 0,
+            type: "multiple-choice",
+        }));
+
+        questions = questions.concat(questionsForType);
+    }
+    const exercise = new Exercise({
+        _id: new ObjectId(),
+        uuid: crypto.randomUUID(),
+        userId,
+        authorId: author.vuNetId,
+        assignmentId,
+        questions,
+        status: "Not Started",
+        totalTimeSpent: 0,
+        totalCorrect: 0,
+        completedQuestions: 0,
+        studentCode: studentCode,
+    });
+    return exercise;
+};
+
 /**
  * Creates a new exercise with AI.
  * @param {*} req - request details
@@ -39,87 +101,15 @@ const createExercise = async (req, res) => {
                 { _id: 0 }
             ).lean();
 
-            const assignment = await Assignment.findOne(
-                { uuid: assignmentId },
-                { _id: 0 }
-            );
-
             if (search) {
                 for (let i = 0; i < search.questions.length; i++) {
                     const question = search.questions[i];
                     search.questions[i] = filterQuestion(question);
                 }
-                const author = await User.findOne(
-                    { vuNetId: search.authorId },
-                    { _id: 0 }
-                );
-                const studentCode = await fetchStudentCode(
-                    author.email,
-                    assignment.identifier
-                );
 
-                return res
-                    .status(201)
-                    .json({ exercise: search, studentCode: studentCode });
+                return res.status(201).json({ exercise: search });
             }
-
-            const user = await User.findOne({ vuNetId: userId }, { _id: 0 });
-            const author = await findSubmission(user, assignment);
-
-            const studentCode = await fetchStudentCode(
-                author.email,
-                assignment.identifier
-            );
-
-            const questionTypes = [
-                "Variable State Trace",
-                "Execution Path Analysis",
-            ];
-
-            let questions = [];
-
-            let numberOfQuestions = 5;
-            const typesCount = questionTypes.length;
-            const base = Math.floor(numberOfQuestions / typesCount);
-            const remainder = numberOfQuestions % typesCount;
-
-            for (let i = 0; i < typesCount; i++) {
-                const qt = questionTypes[i];
-                const count = i === typesCount - 1 ? base + remainder : base;
-
-                if (count <= 0) continue;
-
-                const systemPromptText = systemPrompt(qt, count);
-                const userPromptText = await userPrompt(studentCode);
-                let questionsForType = await generateQuestions(
-                    systemPromptText,
-                    userPromptText
-                );
-
-                // Add additional fields to each question
-                questionsForType = questionsForType.map((question) => ({
-                    ...question,
-                    _id: new mongoose.Types.ObjectId(),
-                    uuid: crypto.randomUUID(),
-                    difficulty: "easy",
-                    timeSpent: 0,
-                    type: "multiple-choice",
-                }));
-
-                questions = questions.concat(questionsForType);
-            }
-            const exercise = new Exercise({
-                _id: new ObjectId(),
-                uuid: crypto.randomUUID(),
-                userId,
-                authorId: author.vuNetId,
-                assignmentId,
-                questions,
-                status: "Not Started",
-                totalTimeSpent: 0,
-                totalCorrect: 0,
-                completedQuestions: 0,
-            });
+            const exercise = await generateExercise(userId, assignmentId);
             await exercise.save();
             const returnExercise = exercise.toObject();
             for (let i = 0; i < returnExercise.questions.length; i++) {
@@ -127,9 +117,7 @@ const createExercise = async (req, res) => {
                 returnExercise.questions[i] = filterQuestion(question);
             }
 
-            return res
-                .status(200)
-                .json({ exercise: returnExercise, studentCode: studentCode });
+            return res.status(200).json({ exercise: returnExercise });
         } else {
             return res.status(400).send({ message: "User ID not found." });
         }
@@ -137,6 +125,40 @@ const createExercise = async (req, res) => {
         console.error(err.message);
         return res.status(500).send({
             message: "Error when initializing exercise.",
+            error: err.message,
+        });
+    }
+};
+
+/**
+ * creates exercises for all students in a chapter
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
+const createExercises = async (req, res) => {
+    const { chapterId } = req.query;
+
+    try {
+        if (chapterId) {
+            const students = await User.find(
+                { role: "student" },
+                { _id: 0, vuNetId: 1 }
+            );
+            for (const student of students) {
+                for (const assignmentId of chapterId.assignments) {
+                    const exercise = await generateExercise(student.vuNetId, assignmentId);
+                    await exercise.save();
+                }
+            }
+            return res.status(200).send({ message: "Successfully created exercises." });
+        } else {
+            return res.status(400).send({ message: "Chapter ID not found." });
+        }
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({
+            message: "Error when creating exercises.",
             error: err.message,
         });
     }
@@ -756,6 +778,7 @@ const getRecentActivity = async (req, res) => {
 
 module.exports = {
     createExercise,
+    createExercises,
     deleteExercise,
     editExercise,
     getExercise,
