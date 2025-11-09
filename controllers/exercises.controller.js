@@ -1,6 +1,7 @@
 const Exercise = require("../models/Exercise.js");
 const Assignment = require("../models/Assignment.js");
 const User = require("../models/User.js");
+const Chapter = require("../models/Chapter.js");
 const mongoose = require("mongoose");
 
 const { ObjectId } = mongoose.Types;
@@ -145,8 +146,10 @@ const createExercises = async (req, res) => {
                 { role: "student" },
                 { _id: 0, vuNetId: 1 }
             );
+
+            const chapter = await Chapter.findOne({ uuid: chapterId }, { _id: 0 });
             for (const student of students) {
-                for (const assignmentId of chapterId.assignments) {
+                for (const assignmentId of chapter.assignmentIds) {
                     const exercise = await generateExercise(student.vuNetId, assignmentId);
                     await exercise.save();
                 }
