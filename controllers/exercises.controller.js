@@ -24,11 +24,12 @@ const {
 
 const generateExercise = async (userId, assignmentId) => {
     const user = await User.findOne({ vuNetId: userId }, { _id: 0 });
-    const author = await findSubmission(user, assignment);
     const assignment = await Assignment.findOne(
         { uuid: assignmentId },
         { _id: 0 }
     );
+    const author = await findSubmission(user, assignment);
+
     const studentCode = await fetchStudentCode(
         author.email,
         assignment.identifier
@@ -147,14 +148,22 @@ const createExercises = async (req, res) => {
                 { _id: 0, vuNetId: 1 }
             );
 
-            const chapter = await Chapter.findOne({ uuid: chapterId }, { _id: 0 });
+            const chapter = await Chapter.findOne(
+                { uuid: chapterId },
+                { _id: 0 }
+            );
             for (const student of students) {
                 for (const assignmentId of chapter.assignmentIds) {
-                    const exercise = await generateExercise(student.vuNetId, assignmentId);
+                    const exercise = await generateExercise(
+                        student.vuNetId,
+                        assignmentId
+                    );
                     await exercise.save();
                 }
             }
-            return res.status(200).send({ message: "Successfully created exercises." });
+            return res
+                .status(200)
+                .send({ message: "Successfully created exercises." });
         } else {
             return res.status(400).send({ message: "Chapter ID not found." });
         }
