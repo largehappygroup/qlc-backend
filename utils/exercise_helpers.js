@@ -1,5 +1,5 @@
 const User = require("../models/User.js");
-
+const { doesSubmissionFolderExist } = require("./file_helpers.js");
 /**
  * shuffles the available answers and filters out sensitive information from a question object.
  * @param {*} question - question object from Exercise model
