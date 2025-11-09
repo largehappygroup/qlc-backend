@@ -38,11 +38,40 @@ const findSubmission = async (user, assignment) => {
     // study group A is self, study group B is others
     if (!user.studyParticipation || user.studyGroup === "A") {
         author = user;
+        const hasSubmission = await doesSubmissionFolderExist(
+            assignment.identifier,
+            user.email
+        );
+
+        if (!hasSubmission) {
+            const usersInStudy = await User.find(
+                {
+                    studyParticipation: true,
+                    vuNetId: { $ne: user.vuNetId },
+                },
+                { _id: 0 }
+            );
+            const candidates = usersInStudy.sort(() => Math.random() - 0.5); // create a copy
+            // First, try to find a submission from other participants (random order)
+            for (const candidate of candidates) {
+                const hasSubmission = await doesSubmissionFolderExist(
+                    assignment.identifier,
+                    candidate.email
+                );
+                if (hasSubmission) {
+                    author = candidate;
+                    break;
+                }
+            }
+        }
     } else {
-        const usersInStudy = await User.find({
-            studyParticipation: true,
-            vuNetId: { $ne: user.vuNetId },
-        }, { _id: 0 });
+        const usersInStudy = await User.find(
+            {
+                studyParticipation: true,
+                vuNetId: { $ne: user.vuNetId },
+            },
+            { _id: 0 }
+        );
         const candidates = usersInStudy.sort(() => Math.random() - 0.5); // create a copy
         // First, try to find a submission from other participants (random order)
         for (const candidate of candidates) {
@@ -64,8 +93,6 @@ const findSubmission = async (user, assignment) => {
             );
             if (hasSubmission) {
                 author = user;
-            } else {
-                throw new Error("No suitable author with a submission found.");
             }
         }
     }
