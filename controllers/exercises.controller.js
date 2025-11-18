@@ -10,17 +10,10 @@ const crypto = require("crypto");
 const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
 
-const { generateQuestions } = require("../services/questionGeneration.js");
-const { fetchStudentCode } = require("../utils/student_code.js");
-const {
-    systemPrompt,
-    userPrompt,
-} = require("../utils/prompt_question_types.js");
+const { queue } = require("../services/queue");
 
-const {
-    filterQuestion,
-    findSubmission,
-} = require("../utils/exercise_helpers.js");
+const { filterQuestion } = require("../utils/exercise_helpers.js");
+const { generateExercise } = require("../services/exerciseGenerator.js");
 
 const generateExercise = async (userId, assignmentId) => {
     const user = await User.findOne({ vuNetId: userId }, { _id: 0 });
@@ -143,6 +136,7 @@ const createExercises = async (req, res) => {
 
     try {
         if (chapterId) {
+            // compute totalTasks so frontend can show progress if desired
             const students = await User.find(
                 { role: "student" },
                 { _id: 0, vuNetId: 1 }
@@ -152,25 +146,68 @@ const createExercises = async (req, res) => {
                 { uuid: chapterId },
                 { _id: 0 }
             );
-            for (const student of students) {
-                for (const assignmentId of chapter.assignmentIds) {
-                    const exercise = await generateExercise(
-                        student.vuNetId,
-                        assignmentId
-                    );
-                    await exercise.save();
+
+            const totalTasks =
+                students.length * (chapter?.assignmentIds?.length || 0);
+
+            // enqueue a job to create exercises using BullMQ
+            const job = await queue.add(
+                "createExercises",
+                {
+                    chapterId,
+                    requestedBy: req.headers["remote-user-vunetid"],
+                    totalTasks,
+                },
+                {
+                    removeOnComplete: true,
+                    removeOnFail: false,
                 }
-            }
-            return res
-                .status(200)
-                .send({ message: "Successfully created exercises." });
+            );
+
+            return res.status(202).json({
+                jobId: job.id,
+                statusUrl: `/jobs/${job.id}`,
+                message: "Exercise creation requested. Processing in background.",
+            });
         } else {
             return res.status(400).send({ message: "Chapter ID not found." });
         }
     } catch (err) {
         console.error(err.message);
         return res.status(500).send({
-            message: "Error when creating exercises.",
+            message: "Error when queuing exercises creation.",
+            error: err.message,
+        });
+    }
+};
+
+/**
+ * Returns status for a queued job
+ */
+const getJobStatus = async (req, res) => {
+    const jobId = req.params?.id;
+    try {
+        if (!jobId) return res.status(400).send({ message: "Missing Job ID." });
+
+        const job = await queue.getJob(jobId);
+        if (!job) return res.status(404).send({ message: "Job not found." });
+
+        const state = await job.getState();
+        const progress = await job.getProgress();
+
+        return res.status(200).json({
+            id: job.id,
+            name: job.name,
+            data: job.data,
+            state,
+            progress,
+            failedReason: job.failedReason || null,
+            returnvalue: job.returnvalue || null,
+        });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({
+            message: "Issue retrieving job status.",
             error: err.message,
         });
     }
@@ -802,4 +839,5 @@ module.exports = {
     getRecentActivity,
     submitRatings,
     getAverageScoreDistribution,
+    getJobStatus,
 };
