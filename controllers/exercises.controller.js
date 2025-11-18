@@ -10,7 +10,7 @@ const crypto = require("crypto");
 const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
 
-const { queue } = require("../services/queue");
+const { queue } = require("../services/queue.js");
 
 const { filterQuestion } = require("../utils/exercise_helpers.js");
 const { generateExercise } = require("../services/exerciseGenerator.js");
