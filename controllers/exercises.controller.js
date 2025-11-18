@@ -10,7 +10,7 @@ const crypto = require("crypto");
 const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
 
-const { queue } = require("../services/queue.js");
+const Job = require("../models/Job.js");
 
 const { filterQuestion } = require("../utils/exercise_helpers.js");
 const { generateExercise } = require("../services/exerciseGenerator.js");
@@ -87,23 +87,21 @@ const createExercises = async (req, res) => {
             const totalTasks =
                 students.length * (chapter?.assignmentIds?.length || 0);
 
-            // enqueue a job to create exercises using BullMQ
-            const job = await queue.add(
-                "createExercises",
-                {
+            // create a Job document so a Mongo-backed worker can pick it up
+            const job = await Job.create({
+                type: "createExercises",
+                payload: {
                     chapterId,
                     requestedBy: req.headers["remote-user-vunetid"],
-                    totalTasks,
                 },
-                {
-                    removeOnComplete: true,
-                    removeOnFail: false,
-                }
-            );
+                totalTasks,
+                progress: 0,
+                status: "pending",
+            });
 
             return res.status(202).json({
-                jobId: job.id,
-                statusUrl: `/jobs/${job.id}`,
+                jobId: job._id,
+                statusUrl: `/jobs/${job._id}`,
                 message: "Exercise creation requested. Processing in background.",
             });
         } else {
@@ -126,20 +124,21 @@ const getJobStatus = async (req, res) => {
     try {
         if (!jobId) return res.status(400).send({ message: "Missing Job ID." });
 
-        const job = await queue.getJob(jobId);
+        const job = await Job.findById(jobId).lean();
         if (!job) return res.status(404).send({ message: "Job not found." });
 
-        const state = await job.getState();
-        const progress = await job.getProgress();
-
         return res.status(200).json({
-            id: job.id,
-            name: job.name,
-            data: job.data,
-            state,
-            progress,
+            id: job._id,
+            type: job.type,
+            payload: job.payload,
+            status: job.status,
+            progress: job.progress || 0,
+            totalTasks: job.totalTasks || 0,
+            completedTasks: job.completedTasks || 0,
             failedReason: job.failedReason || null,
-            returnvalue: job.returnvalue || null,
+            result: job.result || null,
+            createdAt: job.createdAt,
+            updatedAt: job.updatedAt,
         });
     } catch (err) {
         console.error(err.message);
