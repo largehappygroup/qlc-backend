@@ -1,7 +1,9 @@
 {
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "nodemon index.js"
+        "start": "nodemon index.js",
+        "run-job": "node workers/runCreateExercisesJob.js",
+        "pregenerate": "node workers/pregenerateExercises.js"
     },
     "dependencies": {
         "@json2csv/transforms": "^7.0.6",

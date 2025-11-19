@@ -26,6 +26,7 @@ app.use("//chapters", require("./routes/chapters.router.js"));
 app.use("//exercises", require("./routes/exercises.router.js"));
 app.use("//users", require("./routes/users.router.js"));
 app.get("//jobs/:id", require("./controllers/exercises.controller.js").getJobStatus);
+app.get("//jobs/by-chapter/:chapterId", require("./controllers/exercises.controller.js").getJobByChapter);
 app.get("/", (req, res) => {
     res.send(`Hello :D`);
 });

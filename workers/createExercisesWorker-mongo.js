@@ -66,10 +66,16 @@ const processJob = async (jobDoc) => {
                         await exercise.save();
 
                         completed += 1;
+                        const newProgress = Math.round((completed / total) * 100);
                         await Job.findByIdAndUpdate(_id, {
-                            $set: { progress: Math.round((completed / total) * 100) },
+                            $set: { progress: newProgress },
                             $inc: { completedTasks: 1 },
                         });
+
+                        // log after the first exercise is created so progress visibility can be debugged
+                        if (completed === 1) {
+                            console.log(`Job ${_id}: first exercise created — progress ${newProgress}%`);
+                        }
                     } catch (err) {
                         console.error(`Task error for ${t.userId}/${t.assignmentId}:`, err.message);
                         // mark task as progressed so the job doesn't stall

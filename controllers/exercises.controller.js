@@ -11,6 +11,8 @@ const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
 
 const Job = require("../models/Job.js");
+const { spawn } = require("child_process");
+const path = require("path");
 
 const { filterQuestion } = require("../utils/exercise_helpers.js");
 const { generateExercise } = require("../services/exerciseGenerator.js");
@@ -87,7 +89,7 @@ const createExercises = async (req, res) => {
             const totalTasks =
                 students.length * (chapter?.assignmentIds?.length || 0);
 
-            // create a Job document so a Mongo-backed worker can pick it up
+            // create a Job document so a background script can pick it up
             const job = await Job.create({
                 type: "createExercises",
                 payload: {
@@ -98,6 +100,21 @@ const createExercises = async (req, res) => {
                 progress: 0,
                 status: "pending",
             });
+
+            // spawn a detached Node process to run the pregenerate script asynchronously
+            try {
+                const nodeBin = process.execPath;
+                const scriptPath = path.join(__dirname, "..", "workers", "pregenerateExercises.js");
+                const child = spawn(nodeBin, [scriptPath, job._id.toString()], {
+                    detached: true,
+                    stdio: "ignore",
+                });
+                // allow the child to continue running after this process exits
+                child.unref();
+            } catch (spawnErr) {
+                console.error("Failed to spawn pregenerate script:", spawnErr.message);
+                // do not fail the HTTP request — job will remain pending and can be processed later
+            }
 
             return res.status(202).json({
                 jobId: job._id,
@@ -146,6 +163,41 @@ const getJobStatus = async (req, res) => {
             message: "Issue retrieving job status.",
             error: err.message,
         });
+    }
+};
+
+/**
+ * Returns active job for a chapter (pending or in-progress)
+ */
+const getJobByChapter = async (req, res) => {
+    const chapterId = req.params?.chapterId;
+    try {
+        if (!chapterId) return res.status(400).send({ message: "Missing Chapter ID." });
+
+        const job = await Job.findOne({
+            "payload.chapterId": chapterId,
+            status: { $in: ["pending", "in-progress"] },
+        })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        if (!job) return res.status(404).send({ message: "No active job for chapter." });
+
+        return res.status(200).json({
+            id: job._id,
+            type: job.type,
+            payload: job.payload,
+            status: job.status,
+            progress: job.progress || 0,
+            totalTasks: job.totalTasks || 0,
+            completedTasks: job.completedTasks || 0,
+            failedReason: job.failedReason || null,
+            createdAt: job.createdAt,
+            updatedAt: job.updatedAt,
+        });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({ message: "Issue retrieving job by chapter.", error: err.message });
     }
 };
 
@@ -776,4 +828,5 @@ module.exports = {
     submitRatings,
     getAverageScoreDistribution,
     getJobStatus,
+    getJobByChapter,
 };
