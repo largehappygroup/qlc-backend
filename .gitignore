@@ -3,7 +3,7 @@
 
 # Dependency directory
 node_modules
-scripts
+
 # Editors
 .idea
 *.iml
@@ -17,3 +17,4 @@ Thumbs.db
 dist/**/*
 
 uploads
+Testing/
