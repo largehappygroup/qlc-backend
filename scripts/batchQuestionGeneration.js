@@ -8,7 +8,8 @@ const {
 } = require("../utils/systemPromptQuestionCategories");
 const {
   systemPromptSpecificQuestionType,
-} = require("../utils/systemPromptFinalQuestion");
+} = require("../utils/promptFinalQuestion");
+
 const { generateQuestions } = require("../services/QuestionGeneration");
 /**
  * Converts an array of question objects into a CSV-formatted string.
@@ -173,7 +174,7 @@ const a = async () => {
   for (const submission of submissions) {
     questionTypes = await questionTypeGeneration(
       submission,
-      systemPromptTesting()
+      systemPromptQuestionCategories()
     );
     _submissions = Array.from({ length: 1 }, () => submission);
     for (const questionType of questionTypes) {
