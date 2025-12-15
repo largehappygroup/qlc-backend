@@ -1,5 +1,5 @@
 const helenSubmimssion = [
-  // PA-01
+  // PA-01, Index: 0
   `
 // FILE: BasicIO.java
 import java.util.Scanner;
@@ -95,7 +95,7 @@ public class ProgrammingStyleGuide {
     }  // End of main method.
 }  // End of ProgrammStyleGuide class.
 `,
-  // PA-02
+  // PA-02, Index: 1
   `
 // FILE: BirthdayTrivia.java
 import java.time.temporal.ChronoUnit;
@@ -238,7 +238,7 @@ public class Polynomial {
     }
 }
 `,
-  // PA-03
+  // PA-03, Index: 2
   `
 // FILE: AnimalKingdom.java
 public class AnimalKingdom {
@@ -547,7 +547,7 @@ public class PaintCalculator {
 }
 `,
 
-  // PA-10
+  // PA-10, Index: 3
   `
 // FILE: AlteredPuntoBanco.java
 import java.util.Scanner;
@@ -697,7 +697,7 @@ public class AlteredPuntoBanco {
 }
 
 `,
-  // PA-11A
+  // PA-11A, Index: 4
 
   `
 // FILE: Card.java
@@ -770,7 +770,6 @@ public class Card {
     }
 
 }
-
 
 // FILE: Deck.java
 public class Deck {
@@ -971,6 +970,1059 @@ public class Player {
 
 }
 `,
+  // PA-11B Index: 5
+  `
+// FILE: Building.java
+public class Building {
+    /** length of the building */
+    private int length;
+    /** width of the building */
+    private int width;
+    /** length of the lot, including building */
+    private int lotLength;
+    /** width of the lot, including building */
+    private int lotWidth;
+
+    /**
+     * Building constructor with size parameters
+     * @param length - length of the building as an int
+     * @param width - width of the building as an int
+     * @param lotLength - length of the lot as an int
+     * @param lotWidth - width of the lot as an int
+     */
+    public Building(int length, int width, int lotLength, int lotWidth) {
+        this.length = length;
+        this.width = width;
+        this.lotLength = lotLength;
+        this.lotWidth = lotWidth;
+    }
+
+    /**
+     * calculates the area of the building
+     * @return - area of the building as an int
+     */
+    public int calcBuildingArea() {
+        return length * width;
+    }
+
+    /**
+     * calculates the area of the building lot
+     * @return - area of the building lot as an int
+     */
+    public int calcLotArea() {
+        return lotLength * lotWidth;
+    }
+
+    /**
+     * generates a String representation of the building
+     * @return - a String with the building area and lot area
+     */
+    @Override
+    public String toString() {
+        return "Building area: " + calcBuildingArea() + " / Lot area: " + calcLotArea();
+    }
+
+    /**
+     * checks if two Building objects are equivalent
+     * @param object - any Object, though likely to be a Building object
+     * @return - a boolean representing if the objects are the same based on properties
+     */
+    @Override
+    public boolean equals(Object object) {
+        if (object instanceof Building) {
+            Building building = (Building) object;
+            return calcBuildingArea() == building.calcBuildingArea();
+        } else {
+            return false;
+        }
+    }
+}
+
+// FILE: House.java
+public class House extends Building {
+    /** name of the house owner as a String */
+    private String owner;
+    /** whether the house has a pool as a boolean */
+    private boolean pool;
+
+    /**
+     * House constructor with four parameters
+     * @param length - length of house as an int
+     * @param width - width of house as an int
+     * @param lotLength - length of house lot as an int
+     * @param lotWidth - width of house lot as an int
+     */
+    public House(int length, int width, int lotLength, int lotWidth) {
+        this(length, width, lotLength, lotWidth, null, false);
+    }
+
+    /**
+     * House constructor with five parameters
+     * @param length - length of house as an int
+     * @param width - width of house as an int
+     * @param lotLength - length of house lot as an int
+     * @param lotWidth - width of house lot as an int
+     * @param owner - name of the house owner as a String
+     */
+    public House(int length, int width, int lotLength, int lotWidth, String owner) {
+        this(length, width, lotLength, lotWidth, owner, false);
+    }
+
+    /**
+     * House constructor with six parameters
+     * @param length - length of house as an int
+     * @param width - width of house as an int
+     * @param lotLength - length of house lot as an int
+     * @param lotWidth - width of house lot as an int
+     * @param owner - name of the house owner as a String
+     * @param pool - whether a pool exists for the house as a boolean
+     */
+    public House(int length, int width, int lotLength, int lotWidth, String owner, boolean pool) {
+        super(length, width, lotLength, lotWidth);
+        this.owner = owner;
+        this.pool = pool;
+    }
+
+    /**
+     * updates the owner name
+     * @param owner - name of the house owner as a String
+     */
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    /**
+     * updates whether a pool exists for the house
+     * @param pool - whether a pool exists for the house as a boolean
+     */
+    public void setPool(boolean pool) {
+        this.pool = pool;
+    }
+
+    /**
+     * generates a String representation of the house
+     * @return - a String with the owner name, house properties and building properties
+     */
+    @Override
+    public String toString() {
+        String output = "Owner: ";
+        if (owner == null) {
+            output += "n/a";
+        } else {
+            output += owner;
+        }
+        if (pool) {
+            output += "; has a pool";
+        }
+        if (calcLotArea() - calcBuildingArea() > calcBuildingArea()) {
+            output += "; has a big open space";
+        }
+        output += "\n" + super.toString();
+        return output;
+    }
+
+    /**
+     * checks if two House objects are equivalent
+     * @param object - any Object, though likely to be a House object
+     * @return - a boolean representing if the objects are the same based on properties
+     */
+    @Override
+    public boolean equals(Object object) {
+        if (object instanceof House) {
+            House house = (House) object;
+            return calcBuildingArea() == house.calcBuildingArea() && pool == house.pool;
+        } else {
+            return false;
+        }
+    }
+}
+
+// FILE: Office.java
+public class Office extends Building {
+    /** name of the business which owns the office */
+    private String businessName;
+    /** number of parking spaces owned by the building */
+    private int parkingSpaces;
+    /** total number of office buildings */
+    private static int totalOffices = 0;
+
+    /**
+     * Office constructor with four parameters
+     * @param length - length of office as an int
+     * @param width - width of office as an int
+     * @param lotLength - length of office lot as an int
+     * @param lotWidth - width of office lot as an int
+     */
+    public Office(int length, int width, int lotLength, int lotWidth) {
+        super(length, width, lotLength, lotWidth);
+        this.businessName = null;
+        this.parkingSpaces = 0;
+        totalOffices++;
+    }
+
+    /**
+     * Office constructor with five parameters
+     * @param length - length of office as an int
+     * @param width - width of office as an int
+     * @param lotLength - length of office lot as an int
+     * @param lotWidth - width of office lot as an int
+     * @param businessName - name of the business which owns the office as a String
+     */
+    public Office(int length, int width, int lotLength, int lotWidth, String businessName) {
+        super(length, width, lotLength, lotWidth);
+        this.businessName = businessName;
+        this.parkingSpaces = 0;
+        totalOffices++;
+    }
+
+    /**
+     * Office constructor with six parameters
+     * @param length - length of office as an int
+     * @param width - width of office as an int
+     * @param lotLength - length of office lot as an int
+     * @param lotWidth - width of office lot as an int
+     * @param businessName - name of the business which owns the office as a String
+     * @param parkingSpaces - number of parking spaces in the office as an int
+     */
+    public Office(int length, int width, int lotLength,
+    int lotWidth, String businessName, int parkingSpaces) {
+        super(length, width, lotLength, lotWidth);
+        this.businessName = businessName;
+        this.parkingSpaces = parkingSpaces;
+        totalOffices++;
+    }
+
+    /**
+     * updates the number of parking spaces
+     * @param parkingSpaces - number of parking spaces as an int
+     */
+    public void setParkingSpaces(int parkingSpaces) {
+        this.parkingSpaces = parkingSpaces;
+    }
+
+    /**
+     * generates a String representation of the office
+     * @return - a String with the business name, office properties and building properties
+     */
+    @Override
+    public String toString() {
+        String output = "Business: ";
+        if (businessName == null) {
+            output += "unoccupied";
+        } else {
+            output += businessName;
+        }
+        if (parkingSpaces > 0) {
+            output += "; has " + parkingSpaces + " parking spaces";
+        }
+        output += " (total offices: " + totalOffices + ")";
+        output += "\n" + super.toString();
+        return output;
+    }
+
+    /**
+     * checks if two Office objects are equivalent
+     * @param object - any Object, though likely to be a Office object
+     * @return - a boolean representing if the objects are the same based on properties
+     */
+    @Override
+    public boolean equals(Object object) {
+        if (object instanceof Office) {
+            Office office = (Office) object;
+            return calcBuildingArea() == office.calcBuildingArea() &&
+            parkingSpaces == office.parkingSpaces;
+        } else {
+            return false;
+        }
+    }
+}
+`,
+  // PA-10A, Index: 6
+  `
+// FILE: AirportStats.java
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+import java.io.File;
+import java.util.Arrays;
+
+public class AirportStats {
+    public static void main(String[] args) throws FileNotFoundException {
+        Scanner console = new Scanner(System.in);
+        String airport = getAirport(console);
+        String[] airportInfo = findAirport(airport);
+
+        // checks that the airport was found and is valid
+        if (airportInfo != null) {
+            File airportFile = getDataFile(console);
+
+            printChartHeader(airportInfo);
+            int[] totalFlight = airportFlights(airportInfo[0], airportFile);
+            printReport(totalFlight);
+        }
+    }
+
+    /**
+     * looks up an airport in a file and returns the code and name
+     *
+     * @param airport - the airport code or name as a String
+     * @return - a String Array with the airport code and name
+     * @throws FileNotFoundException - Exception Object stops program when file isn't found.
+     */
+    public static String[] findAirport(String airport) throws FileNotFoundException {
+        Scanner readFile = new Scanner(new File("airports-code.csv"));
+
+        // reads the airport codes file
+        while (readFile.hasNextLine()) {
+            String[] line = readFile.nextLine().split(",");
+            // makes sure code and airport are both present
+            if (line.length == 2) {
+                if (line[0].equalsIgnoreCase(airport)) {
+                    return line;
+                }
+                if (line[1].toLowerCase().contains(airport.toLowerCase())) {
+                    return line;
+                }
+            }
+        }
+
+        // if no airport is found, we don't have an array
+        System.out.println("Airport not found.");
+        return null;
+    }
+
+    /**
+     * gets an airport code or name from input
+     *
+     * @param console - Scanner object gets user input.
+     * @return -
+     */
+    public static String getAirport(Scanner console) {
+        System.out.print("Enter airport name or code: ");
+        return console.nextLine();
+    }
+
+    /**
+     * gets a file from input that will hold flight information
+     *
+     * @param console - Scanner object gets user input.
+     * @return - File object that exists in the file system.
+     */
+    public static File getDataFile(Scanner console) {
+        System.out.print("Enter data file name: ");
+        String fileName = console.nextLine();
+        File dataFile = new File(fileName);
+
+        // checks if the file exists, asks for a new one if not present
+        while (!dataFile.exists()) {
+            System.out.print("File does not exist, try again: ");
+            fileName = console.nextLine();
+            dataFile = new File(fileName);
+        }
+
+        System.out.println(fileName + " successfully found.");
+        return dataFile;
+    }
+
+    /**
+     * outputs the header of the table
+     *
+     * @param airportInfo - String array with the airport code and name
+     */
+    public static void printChartHeader(String[] airportInfo) {
+        System.out.println();
+        System.out.println(airportInfo[0] + " | " + airportInfo[1]);
+        System.out.println("Flight Statistics");
+        System.out.println();
+        System.out.println("============================================================");
+        System.out.println("Year     Cancelled       Delayed      Diverted       On Time");
+        System.out.println("============================================================");
+    }
+
+    /**
+     * outputs a row in the chart of flights
+     *
+     * @param year        - the year being printed as an int
+     * @param totalFlight - Integer array with all years' flight details summed up
+     * @param yearFlight  - Integer array with one year of flight details
+     */
+    public static void printRow(int year, int[] totalFlight, int[] yearFlight) {
+        System.out.printf(
+                "%d%,14d%,14d%,14d%,14d\n",
+                year,
+                yearFlight[0],
+                yearFlight[1],
+                yearFlight[2],
+                yearFlight[3]
+        );
+        for (int i = 0; i < totalFlight.length; i++) {
+            totalFlight[i] += yearFlight[i];
+        }
+        Arrays.fill(yearFlight, 0);
+    }
+
+    /**
+     * reads the data file and outputs all flight information for an airport by year
+     *
+     * @param code     - the airport code to analyze as a String
+     * @param dataFile - File object represents a system file.
+     * @return - Integer array with all years' flight information summed together
+     * @throws FileNotFoundException - Exception object stops program when file not found
+     */
+    public static int[] airportFlights(String code, File dataFile) throws FileNotFoundException {
+        Scanner readFile = new Scanner(dataFile);
+        int[] totalFlight = new int[4];
+        int year = 2003;
+
+        int[] yearFlight = new int[4];
+
+
+        while (readFile.hasNextLine()) {
+            String[] row = readFile.nextLine().split(",");
+
+            // skip the row if there is any missing values or code is not the target airport
+            if (row.length == 6 && row[0].equalsIgnoreCase(code)) {
+                int rowYear = Integer.parseInt(row[1].split("/")[0]);
+
+                // if we've changed to a new year, we want to output the row for the old year
+                if (rowYear != year) {
+                    printRow(year, totalFlight, yearFlight);
+                    year = rowYear;
+                }
+
+                // add corresponding flight values to the array
+                for (int i = 2; i < row.length; i++) {
+                    int value = Integer.parseInt(row[i]);
+                    yearFlight[i - 2] += value;
+                }
+            }
+        }
+
+        // output the last row
+        printRow(year, totalFlight, yearFlight);
+        return totalFlight;
+    }
+
+    /**
+     * displays the final report of all years
+     *
+     * @param totalFlight - Integer array with related flight details summed
+     */
+    public static void printReport(int[] totalFlight) {
+        System.out.println("============================================================");
+
+        // the sum of all flights for the airport
+        System.out.printf(
+                "%,18d%,14d%,14d%,14d\n",
+                totalFlight[0],
+                totalFlight[1],
+                totalFlight[2],
+                totalFlight[3]
+        );
+
+        // the percentage distribution for all airport flights
+        System.out.printf(
+                "%,17.1f%%%,13.1f%%%,13.1f%%%,13.1f%%\n",
+                (double) totalFlight[0] / arrayTotal(totalFlight) * 100,
+                (double) totalFlight[1] / arrayTotal(totalFlight) * 100,
+                (double) totalFlight[2] / arrayTotal(totalFlight) * 100,
+                (double) totalFlight[3] / arrayTotal(totalFlight) * 100
+        );
+    }
+
+    /**
+     * finds the sum of an integer array
+     *
+     * @param arr - Integer array holding different integers.
+     * @return - the sum of all individual elements in the array as an int
+     */
+    public static int arrayTotal(int[] arr) {
+        int total = 0;
+        for (int i = 0; i < arr.length; i++) {
+            total += arr[i];
+        }
+        return total;
+    }
+
+
+}
+`,
+  // PA-09A, Index: 7
+
+  `
+// FILE: MadLibs.java
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+import java.io.File;
+import java.util.Random;
+
+public class MadLibs {
+    public static void main(String[] args) throws FileNotFoundException {
+        Scanner console = new Scanner(System.in);
+        Random rand = new Random();
+
+        // getting all strings for each type of file
+        String[] adjectives = getWords("adjectives", console);
+        String[] animals = getWords("animals", console);
+        String[] objects = getWords("objects", console);
+        String[] answers = getWords("answers", console);
+
+        // get the seed and the total number of sentences
+        int seed = getSeed(console);
+        rand.setSeed(seed);
+        int numSentences = getNumSentences(console);
+
+        System.out.println("\nHere " +
+            ((numSentences != 1) ? "are the sentences:\n" : "is the sentence:\n"));
+
+        // display all sentences
+        for (int i = 1; i <= numSentences; i++) {
+            System.out.printf("Sentence %2d: ", i);
+            System.out.printf("Six %s %s sit in the %s. Do they fit? %s\n",
+                getRandomWord(adjectives, rand),
+                getRandomWord(animals, rand),
+                getRandomWord(objects, rand),
+                getRandomWord(answers, rand)
+            );
+        }
+    }
+
+    /**
+     * checks if the inputted file exists and gets it if so
+     * @param type - the type of words in the file as a String
+     * @param console - Scanner object gets user input.
+     * @return - File object with details about a valid file in the system.
+     */
+    public static File getFile(String type, Scanner console) {
+        System.out.print("Enter file name for " + type + ": ");
+        File stringsFile = new File(console.next());
+
+        // if the file doesn't exist, ask for a new file name
+        while (!stringsFile.exists()) {
+            System.out.print("File does not exist, try again: ");
+            stringsFile = new File(console.next());
+        }
+
+        // file must be successfully found if loop is exited
+        System.out.println(stringsFile.getName() + " successfully found.");
+        System.out.println();
+
+        return stringsFile;
+    }
+
+    /**
+     * gets a positive number from input to be used as a seed
+     * @param console - Scanner object gets user input
+     * @return - the seed to be used as an int
+     */
+    public static int getSeed(Scanner console) {
+        System.out.print("Enter a seed: ");
+        int seed = console.nextInt();
+
+        // checks if positive, asks for a new number if not
+        while (seed <= 0) {
+            System.out.print("Not a positive number, try again: ");
+            seed = console.nextInt();
+        }
+        return seed;
+    }
+
+    /**
+     * gets the number of sentences to be generated from input, must be between 1-50
+     * @param console - Scanner object gets user input.
+     * @return - number of sentences to be generated as an int
+     */
+    public static int getNumSentences(Scanner console) {
+        System.out.print("Enter number of sentences to produce: ");
+        int numSentences = console.nextInt();
+
+        // checks if in range, asks for new number if not
+        while (numSentences < 1 || numSentences > 50) {
+            System.out.print("Not between 1 and 50, try again: ");
+            numSentences = console.nextInt();
+        }
+
+        return numSentences;
+    }
+
+    /**
+     * gets all strings from a file
+     * @param type - the type of words in the file as a String
+     * @param console - Scanner object gets user input.
+     * @return - String Array holding various words/phrases to be used
+     * @throws FileNotFoundException - Exception object, stops program if file doesn't exist
+     */
+    public static String[] getWords(String type, Scanner console) throws FileNotFoundException {
+        File stringsFile = getFile(type, console);
+        Scanner readFile = new Scanner(stringsFile);
+
+        int numStrings = readFile.nextInt();
+        String[] strings = new String[numStrings];
+
+        // ensures cursor is on the next line
+        readFile.nextLine();
+
+        for (int i = 0; i < numStrings; i++) {
+            strings[i] = readFile.nextLine();
+        }
+
+        return strings;
+    }
+
+    /**
+     * gets a random word from a given array of words
+     * @param words - String Array containing different phrases/words
+     * @param rand - Random object generates pseudo-random values
+     * @return - a random word from the String Array as a String
+     */
+    public static String getRandomWord(String[] words, Random rand) {
+        int randIndex = rand.nextInt(words.length);
+        return words[randIndex];
+    }
+}
+`,
+  // PA-09B, Index: 8
+  `
+  // FILE: MatchingNumbers.java
+import java.util.Scanner;
+import java.util.Random;
+import java.util.Arrays;
+
+public class MatchingNumbers {
+    /** number of dice being rolled per experiment */
+    private static final int NUM_DICE = 5;
+    /** number of sides on a die */
+    private static final int DICE_SIDES = 6;
+    /** number combinations we are looking for */
+    private static final int NUM_TYPES = 4;
+    /** value representing a combination with 3 same dice */
+    private static final int THREE_TIMES = 0;
+    /** value representing a combination with 4 same dice */
+    private static final int FOUR_TIMES = 1;
+    /** value representing a combination with 5 same dice */
+    private static final int FIVE_TIMES = 2;
+    /** value representing a combination with 2 same and 3 same dice */
+    private static final int TWO_THREE_TIMES = 3;
+
+    public static void main(String[] args) {
+        Scanner console = new Scanner(System.in);
+        Random rand = new Random();
+        String again = "y";
+        int totalRolls = 0;
+        int[] totalMatchingTypeCount = new int[NUM_TYPES];
+
+        // gets seed number from user
+        int seed = getNumber("Enter a seed: ", console);
+        rand.setSeed(seed);
+
+        // while the user wants to keep playing
+        while (!again.equalsIgnoreCase("n")) {
+
+            // get number of rolls and run the simulation
+            int numRolls = getNumber("Enter number of rolls: ", console);
+            System.out.println();
+            int[] matchingTypeCount = runExperiment(rand, numRolls);
+
+            displayReport(matchingTypeCount, numRolls);
+
+            // keep track of all statistics (reported at the end)
+            totalRolls += numRolls;
+            for (int i = 0; i < totalMatchingTypeCount.length; i++) {
+                totalMatchingTypeCount[i] += matchingTypeCount[i];
+            }
+
+            // checks if the user wants to run the experiment again
+            System.out.print("\nWould you like to run experiment again (Y/N)? ");
+            again = console.next();
+        }
+
+        // displays total stats of all experiments conducted
+        displayReport(totalMatchingTypeCount, totalRolls);
+    }
+
+    /**
+     * gets a positive number from input
+     * @param prompt - instructions for the user as a String
+     * @param console - Scanner object gets user input
+     * @return - a positive integer
+     */
+    public static int getNumber(String prompt, Scanner console) {
+        System.out.print(prompt);
+        int num = console.nextInt();
+        while (num <= 0) {
+            System.out.print("Not a positive number, try again: ");
+            num = console.nextInt();
+        }
+        return num;
+    }
+
+    /**
+     * looks for a target number in an unsorted array
+     * @param arr - Array to be searched
+     * @param target - the number we are looking for
+     * @return - a boolean representing if the number is in the array
+     */
+    public static boolean searchNum(int[] arr, int target) {
+        boolean containsTarget = false;
+        for (int num : arr) {
+            containsTarget = containsTarget || (num == target);
+        }
+
+        return containsTarget;
+    }
+
+    /**
+     * calculate the percentage of a type of roll out of total rolls conducted
+     * @param targetRolls - number of one type of roll as an int
+     * @param totalRolls - number of the total rolls conducted as an int
+     * @return - a percentage as a double
+     */
+    public static double calcPercentage(int targetRolls, int totalRolls) {
+        return (double) targetRolls / totalRolls * 100;
+    }
+
+    /**
+     * runs the experiment and keeps track of the different types found
+     * @param rand - Random object to generate pseudo-random values
+     * @param numRolls - total number of rolls to be conducted
+     * @return - integer Array with the counts for the corresponding types of rolls.
+     */
+    public static int[] runExperiment(Random rand, int numRolls) {
+        int [] matchingTypeCount = new int[NUM_TYPES];
+        Arrays.fill(matchingTypeCount, 0);
+        int[] typeCount = new int[DICE_SIDES];
+
+        for (int i = 0; i < numRolls; i++) {
+            Arrays.fill(typeCount, 0);
+            for (int j = 0; j < NUM_DICE; j++) {
+                int diceRoll = rand.nextInt(6) + 1;
+                typeCount[diceRoll-1]++;
+            }
+
+            // increments if the target number is found in typeCount
+            if (searchNum(typeCount, 3) && searchNum(typeCount, 2)) {
+                matchingTypeCount[TWO_THREE_TIMES]++;
+            }
+            if (searchNum(typeCount, 3)) {
+                matchingTypeCount[THREE_TIMES]++;
+            }
+            if (searchNum(typeCount, 4)) {
+                matchingTypeCount[FOUR_TIMES]++;
+            }
+            if (searchNum(typeCount, 5)) {
+                matchingTypeCount[FIVE_TIMES]++;
+            }
+        }
+        return matchingTypeCount;
+    }
+
+    /**
+     * displays the statistics for an experiment
+     * @param matchingTypeCount - Array that holds the number of times each type occurred
+     * @param numRolls - number of rolls in the experiment as an int
+     */
+    public static void displayReport(int[] matchingTypeCount, int numRolls) {
+        System.out.println("After " + numRolls + " " + wordPlural("roll", numRolls) + ":");
+        for (int i = 0; i < matchingTypeCount.length; i++) {
+            String type;
+            // match
+            if (i == THREE_TIMES) {
+                type = "Three";
+            } else if (i == FOUR_TIMES) {
+                type = "Four";
+            } else if (i == FIVE_TIMES) {
+                type = "Five";
+            } else {
+                type = "Three and two";
+            }
+            System.out.printf(
+                "- %s dice matching: %d %s (%.1f%%)\n",
+                type,
+                matchingTypeCount[i],
+                wordPlural("time", matchingTypeCount[i]),
+                calcPercentage(matchingTypeCount[i], numRolls));
+        }
+    }
+
+    /**
+     * adds an "s" to the end of a word if applicable
+     * @param word - the singular version of the word as a String
+     * @param num - the number of things that word represents as an int
+     * @return - an appropriate version of the word as a String
+     */
+    public static String wordPlural(String word, int num) {
+        return word + ((num != 1) ? "s" : "");
+    }
+
+}
+  `,
+  // PA-08A, Index: 9
+  `
+// FILE: Harshad.java
+import java.util.Scanner;
+import java.io.File;
+import java.io.FileNotFoundException;
+
+public class Harshad {
+    public static void main(String[] args) throws FileNotFoundException {
+        Scanner console = new Scanner(System.in);
+
+        File inputFile = getFile(console);
+
+        findHarshadNumbers(inputFile);
+    }
+
+    /**
+     * gets a valid file name from the user
+     *
+     * @param console - Scanner object to get user input.
+     * @return - a File object that represents data files
+     */
+    public static File getFile(Scanner console) {
+        System.out.print("Enter file name: ");
+        String fileName = console.nextLine().trim();
+        File inputFile = new File(fileName);
+
+        // if file doesn't exist, get another name
+        while (!inputFile.exists()) {
+            System.out.print("File does not exist, try again: ");
+            fileName = console.next();
+            inputFile = new File(fileName);
+        }
+
+        System.out.println(fileName + " successfully found.");
+        return inputFile;
+    }
+
+    /**
+     * displays the final report regarding the data file
+     *
+     * @param harshadCount    - total harshad numbers as an int
+     * @param nonHarshadCount - total non-harshad numbers as an int
+     * @param badTokens       - total bad tokens as an int
+     */
+    public static void displayResults(int harshadCount, int nonHarshadCount, int badTokens) {
+        System.out.println("- Total Harshad numbers: " + harshadCount);
+        System.out.println("- Total non-Harshad numbers: " + nonHarshadCount);
+        System.out.println("- Total bad tokens: " + badTokens);
+    }
+
+    /**
+     * scans the file, finds all tokens, and figures out if they are harshad numbers
+     *
+     * @param inputFile - File object with various tokens in it.
+     * @throws FileNotFoundException - Exception object, stops program if file doesn't exist
+     */
+    public static void findHarshadNumbers(File inputFile) throws FileNotFoundException {
+        // scanner to read file input
+        System.out.println("\nScanning " + inputFile.getName() + "...");
+        Scanner readFile = new Scanner(inputFile);
+
+        int harshadCount = 0, nonHarshadCount = 0, badTokens = 0;
+
+        // token processing
+        while (readFile.hasNext()) {
+            String token = readFile.next();
+            Scanner readToken = new Scanner(token);
+
+            if (readToken.hasNextInt()) {
+
+                int num = readToken.nextInt();
+                // harshad number if number divisible by digit sum
+                if (num % (num / 100 + (num / 10) % 10 + num % 10) == 0) {
+                    System.out.println(num + " is a Harshad number.");
+                    harshadCount++;
+                } else {
+                    nonHarshadCount++;
+                }
+
+            } else {
+                badTokens++;
+            }
+
+            readToken.close();
+        }
+        readFile.close();
+
+        //display final results
+        System.out.println("\nResults for " + inputFile.getName() + "...");
+        displayResults(harshadCount, nonHarshadCount, badTokens);
+    }
+
+
+}
+  `,
+  // PA-08B, Index: 10
+  `
+// FILE: GuessingGame.java
+import java.util.Scanner;
+import java.util.Random;
+
+public class GuessingGame {
+    /**
+     * Constant for biggest number that the user can guess.
+     */
+    private static final int MAX = 100;  // DO NOT CHANGE
+
+    public static void main(String[] args) {
+        /***** DO NOT EDIT THE CODE BELOW *****/
+
+        Scanner console = new Scanner(System.in);
+        Random random = new Random();
+
+        printHeading("Game setup");
+
+        // Get seed from user.
+        int seed = getSeed(console);
+
+        // Set seed for random number generator.
+        random.setSeed(seed);
+
+        /***** DO NOT EDIT THE CODE ABOVE *****/
+
+        // Get the maximum number of times the user can guess.
+        int maxGuesses = getValidNum("Enter maximum guesses allowed: ", console);
+
+        // Display instructions.
+        printInstructions(maxGuesses);
+
+        int hiddenNum = random.nextInt(MAX) + 1;
+
+        playGame(console, maxGuesses, hiddenNum);
+    }
+
+    /**
+     * Prints a heading based on the passed string.
+     * <p>
+     * THIS METHOD PROVIDED TO YOU. DO NOT MODIFY.
+     *
+     * @param heading The heading to print.
+     */
+    public static void printHeading(String heading) {
+        System.out.println(heading);
+
+        for (int i = 0; i < heading.length(); ++i) {
+            System.out.print("=");
+        }
+
+        System.out.println();
+        System.out.println();
+    }
+
+    /**
+     * displays the initial instructions for the player to understand the game
+     *
+     * @param maxGuesses - the maximum number of guesses for the user as an int
+     */
+    public static void printInstructions(int maxGuesses) {
+        System.out.println();
+        printHeading("Play game");
+        System.out.println("I'll pick a number between 1-" + MAX + ". You try to guess it.");
+        System.out.println("If you don't guess it right, I'll give you a hint to help you.");
+
+        String guessPlural = ((maxGuesses > 1) ? " guesses" : " guess");
+        System.out.println("You get " + maxGuesses + guessPlural + ". Let's play!");
+        System.out.println();
+        System.out.println("I am thinking of a number between 1 and " + MAX + ".\n");
+    }
+
+    /**
+     * Prompts and returns the random number generator seed.
+     * THIS METHOD PROVIDED TO YOU. DO NOT MODIFY.
+     *
+     * @param console A Scanner object for console (or keyboard) input.
+     * @return The seed to set the random number generator.
+     */
+    public static int getSeed(Scanner console) {
+        System.out.print("Enter a seed: ");
+        int seed = console.nextInt();
+        return seed;
+    }
+
+    /**
+     * returns a valid integer between 1 and the max.
+     *
+     * @param console - a Scanner Object that gets user input.
+     * @return - an integer between 1 and the maximum.
+     */
+    public static int getValidNum(String prompt, Scanner console) {
+        // get initial input
+        System.out.print(prompt);
+        String token = console.next();
+
+        // checks if the token is valid - gets another token if not
+        while (!(isValidNum(token))) {
+            System.out.print("Not in the range 1-" + MAX + ", try again: ");
+            token = console.next();
+        }
+
+        // scanner to convert the string to an integer
+        Scanner convertInt = new Scanner(token);
+        int num = convertInt.nextInt();
+        convertInt.close();
+
+        return num;
+    }
+
+    /**
+     * checks if the given number is a valid int and within the range 1 to max
+     *
+     * @param guessToken - possible number as a String
+     * @return - boolean whose value describes if the number is a valid int
+     */
+    public static boolean isValidNum(String guessToken) {
+        // scanner to check if a number exists
+        Scanner validityScanner = new Scanner(guessToken);
+
+        if (!validityScanner.hasNextInt()) {
+            return false;
+        }
+
+        // convert the value to a string and check if the number is in the range
+        int guessNum = validityScanner.nextInt();
+        validityScanner.close();
+        return (guessNum >= 1 && guessNum <= MAX);
+    }
+
+    /**
+     * plays through the guessing game
+     *
+     * @param console    - Scanner object gets user input
+     * @param maxGuesses - maximum number of guesses as an int
+     * @param hiddenNum  - desired number as an int
+     */
+    public static void playGame(Scanner console, int maxGuesses, int hiddenNum) {
+        int whichGuess = 1;
+
+        // Get the user's guess.
+        int guess = getValidNum("Guess " + whichGuess + ", enter your guess: ", console);
+
+        // Give user up to given tries to get it right.
+        while (!((guess == hiddenNum) || (whichGuess >= maxGuesses))) {
+
+            System.out.println("Sorry, that guess is incorrect.");
+            // Guess is incorrect. Give the user a hint.
+            System.out.println("The number I am thinking of is " +
+                    ((guess < hiddenNum) ? "higher." : "lower."));
+
+            // increment on which guess it is and get another guess
+            whichGuess++;
+            guess = getValidNum("Guess " + whichGuess + ", enter your guess: ", console);
+        }
+
+        // checks the final result
+        if (guess == hiddenNum) {
+            // The user guessed correctly.
+            String guessPlural = (whichGuess > 1) ? " guesses" : " guess";
+            System.out.println("Correct! You got it in " + whichGuess + guessPlural + ".");
+        } else {
+            // The user guessed incorrectly.
+            System.out.println("Sorry, you lose. The number I was thinking of was "
+                    + hiddenNum + ".");
+        }
+    }
+
+}
+  `,
 ];
 
 const helenContext = [
@@ -1513,11 +2565,93 @@ const contextArray1 = [
   `,
 ];
 
-console.log(helenSubmimssion.length);
-console.log(helenContext.length);
+// console.log(helenSubmimssion[4]);
+// console.log(helenContext.length);
 module.exports = {
   //   studentSubmissions,
   //   contextArray,
   helenSubmimssion,
   helenContext,
 };
+
+`
+// FILE: Deck.java
+public class Deck {
+    /** holds all cards in the deck as a Card Array */
+    private Card[] card;
+    /** the id for the next card in the deck as an int */
+    private int currIdx;
+    /** The size of the deck with 13 cards per suit of spades, hearts, clubs and diamonds.*/
+    public static final int SIZE_OF_DECK = Card.SUIT.length * Card.RANK.length;
+
+    /**
+     * Empty constructor for the Deck class
+     */
+    public Deck() {
+        this.currIdx = 0;
+        this.card = new Card[SIZE_OF_DECK];
+        for (int i = 0; i < SIZE_OF_DECK; i++) {
+            card[i] = new Card(i % 13, i / 13);
+        }
+    }
+
+    /**
+     * Alternate constructor for the Deck class with order of cards
+     * @param order - int Array with indices for the generated cards
+     */
+    public Deck(int[] order) {
+        this.currIdx = 0;
+        this.card = new Card[SIZE_OF_DECK];
+        for (int i = 0; i < SIZE_OF_DECK; i++) {
+            card[order[i]] = new Card(i % 13, i / 13);
+        }
+    }
+
+    /**
+     * draws a card from the top of the deck
+     * @return - a Card object that was next in the deck
+     */
+    public Card draw() {
+        Card newCard = card[currIdx];
+        card[currIdx] = null;
+        currIdx++;
+        return newCard;
+    }
+
+    /**
+     * checks if the deck has available cards remaining
+     * @return - a boolean representing if the deck is empty or not
+     */
+    public boolean isEmpty() {
+        return currIdx >= SIZE_OF_DECK;
+    }
+
+    /**
+     * generates a String representation of the deck
+     * @return - a String with the number of remaining cards
+     */
+    @Override
+    public String toString() {
+        int remainingCards = SIZE_OF_DECK - currIdx;
+        String pluralWord = ((remainingCards != 1) ? "s." : ".");
+        return "The deck has " + remainingCards + " remaining card" + pluralWord;
+    }
+
+    /**
+     * checks if two Deck objects are equivalent
+     * @param object - any Object, though likely to be a Deck object
+     * @return - a boolean representing if the objects are the same based on properties
+     */
+    @Override
+    public boolean equals(Object object) {
+        if (object instanceof Deck) {
+            Deck deck = (Deck) object;
+            return currIdx == deck.currIdx;
+        } else {
+            return false;
+        }
+    }
+}
+
+
+`;

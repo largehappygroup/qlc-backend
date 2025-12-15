@@ -37,11 +37,7 @@ const convertToCSV = (questions) => {
  * Main function to process submissions and write to a CSV.
  * @param {Array<string>} submissions - An array of strings, where each string is a student's combined code.
  */
-const processSubmissionsAndCreateCSV = async (
-  submissions,
-  systemPrompt,
-  contextArray
-) => {
+const processSubmissionsAndCreateCSV = async (submissions, systemPrompt) => {
   console.log(
     `--- Starting batch generation for ${submissions.length} code submissions ---`
   );
@@ -86,7 +82,7 @@ const processSubmissionsAndCreateCSV = async (
   if (allGeneratedQuestions.length > 0) {
     try {
       const csvData = convertToCSV(allGeneratedQuestions);
-      const filePath = path.join(__dirname, "bulk_generated_questions.csv");
+      const filePath = path.join(__dirname, "bulk_generated_questions2.csv");
 
       fs.writeFileSync(filePath, csvData, "utf8");
       console.log(`✅ Successfully saved all questions to: ${filePath}`);
@@ -99,10 +95,4 @@ const processSubmissionsAndCreateCSV = async (
 };
 
 // --- RUN THE SCRIPT ---
-submissions = Array.from({ length: 1 }, () => helenSubmimssion[4]);
-// console.log(submissions);
-processSubmissionsAndCreateCSV(
-  submissions,
-  systemPrompt("Predict the output"),
-  [helenContext[4]]
-);
+submissions = Array.from({ length: 1 }, () => helenSubmimssion[3]);
