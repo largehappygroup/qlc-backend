@@ -1,13 +1,13 @@
 /**
  * Generates the system prompt to get various question categories for a submission.
- * @param {number} minNumberOfQuestionsTypes - The mininum number of question categories that the LLM is expected to generate.
- * @param {number} maxNumberOfQuestionsTypes - The maximum number of question categories that the LLM is expected to generate.
+ * @param {number} minNumberOfQuestionsCategories  - The mininum number of question categories that the LLM is expected to generate.
+ * @param {number} maxNumberOfQuestionsCategories - The maximum number of question categories that the LLM is expected to generate.
  * @returns {string} A detailed prompt to generate question categories.
  */
 
 const systemPromptQuestionCategories = (
-  minNumberOfQuestionsTypes,
-  maxNumberOfQuestionsTypes
+  minNumberOfQuestionsCategories = 3,
+  maxNumberOfQuestionsCategories = 6
 ) => {
   return `
 Your task is to analyze the provided student code, identify the core, generalizable programming constructs and patterns it contains, and then propose a set of unique, reusable, general-purpose question types that could test those constructs/patterns.
@@ -57,7 +57,7 @@ Task Instructions
 1. Analyze Constructs/Patterns: Scan the code for core, reusable, unique constructs/patterns (e.g., loops, conditionals, inheritance, method calls, data structures).
 2. Generalize: For each constructs/patterns, invent a general-purpose question type that can test it.
 3. Define Directives: Write "generation_directives" that are also general. They must instruct another AI on how to find a relevant piece of code (e.g., "Select a method that is overridden in a subclass..."), not which specific piece of code to find (e.g., "Find the 'makeSound' method...").
-4. It is acceptable to have less than ${maxNumberOfQuestionsTypes} question types, especially for simpler assignments. Do not generate many question types that are quite similar to each other or don't fit the assignment. 
+4. It is acceptable to have less than ${maxNumberOfQuestionsCategories} question types, especially for simpler assignments. Do not generate many question types that are quite similar to each other or don't fit the assignment. 
 
 Output Instructions
 For each question you generate, you must provide the following in a structured format:
@@ -67,8 +67,8 @@ For each question you generate, you must provide the following in a structured f
 - Generation Directives: An array of strings, where each string is a strict, step-by-step rule that another AI must follow to generate a question of this type.
 
 
-Your response must be a valid JSON array containing ${minNumberOfQuestionsTypes}-${maxNumberOfQuestionsTypes} unique question type objects. Return only the raw JSON and nothing else. Do not wrap the response in markdown code fences. Do not include any text before or after the JSON array.
-Each object in the array must follow this exact structure:
+Your response must be a valid JSON array containing ${minNumberOfQuestionsCategories}-${maxNumberOfQuestionsCategories} unique question type objects. Return only the raw JSON and nothing else. Do not wrap the response in markdown code fences. Do not include any text before or after the JSON array.
+Each object in the array must strictly follow this exact structure (with nothing before or after):
 [
   {
       "name": "String",

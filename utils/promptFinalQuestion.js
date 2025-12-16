@@ -3,11 +3,11 @@ const path = require("path");
 
 /**
  * Generates the system prompt based on various question types, which are then used to generate QLCs.
- * @param {string} questionCategory - The category of question returned by the LLM, along with generation directives. 
+ * @param {string} questionCategory - The category of question returned by the LLM, along with generation directives.
  * @returns {string} A detailed instruction string, formatted and ready to be sent to the AI.
  */
-const systemPromptSpecificQuestionType = (questionCategory) => {
-  // Maintaining a global generation directives based on experimental results. 
+const systemPromptSpecificQuestionCategory = (questionCategory) => {
+  // Maintaining a global generation directives based on experimental results.
   const globalGenerationDirectives = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, "globalGenerationDirectives.json"),
@@ -45,7 +45,7 @@ For each question you generate, you must provide the following in a structured f
 4.  Hints: You must provide ${maxNumberOfHints} hints. The first hint must explain why the first incorrect answer is wrong. The second hint must explain why the second incorrect answer is wrong, and the third hint must explain why the third incorrect answer is wrong. Make the hints objective statements.
 
 Your response must be a valid JSON array containing ${numberOfQuestions} question objects. Return only the raw JSON and nothing else. Do not wrap the response in markdown code fences. Do not include any text before or after the JSON array.
-Each object in the array must follow this exact structure:
+Each object in the array must strictly follow this exact structure (with nothing before or after):
 [
   {
       "questionText": "String",
@@ -87,5 +87,5 @@ const userPrompt = async () => {
 
 module.exports = {
   userPrompt,
-  systemPromptSpecificQuestionType,
+  systemPromptSpecificQuestionCategory,
 };

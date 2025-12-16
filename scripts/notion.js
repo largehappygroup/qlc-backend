@@ -6,7 +6,7 @@ const { parse } = require("csv-parse/sync");
 
 const NOTION_KEY = process.env.NOTION_KEY;
 const NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID;
-const CSV_FILE_PATH = path.join(__dirname, "bulk_generated_questions2.csv"); // Path to your CSV file
+const CSV_FILE_PATH = path.join(__dirname, "batch_questions_generated.csv"); // Path to your CSV file
 
 const notion = new Client({ auth: NOTION_KEY });
 /**
@@ -122,7 +122,9 @@ async function importCsvToNotion() {
         .split(";")
         .map((answer) => answer.trim())
         .filter((answer) => answer.length > 0);
-      const questionTypeDirectives = (record.questionTypeDirectives || "")
+      const questionCategoryDirectives = (
+        record.questionCategoryDirectives || ""
+      )
         .split(";")
         .map((answer) => answer.trim())
         .filter((answer) => answer.length > 0);
@@ -191,7 +193,8 @@ async function importCsvToNotion() {
                 {
                   text: {
                     content:
-                      "Question Type: " + record.questionTypeName || "N/A",
+                      "Question Category: " + record.questionCategoryName ||
+                      "N/A",
                   },
                 },
               ],
@@ -201,7 +204,9 @@ async function importCsvToNotion() {
             paragraph: {
               // The answer text is in its own, simple paragraph
               rich_text: [
-                { text: { content: record.questionTypeDefinition || "N/A" } },
+                {
+                  text: { content: record.questionCategoryDefinition || "N/A" },
+                },
               ],
             },
           },
@@ -211,7 +216,7 @@ async function importCsvToNotion() {
             },
           },
 
-          ...questionTypeDirectives.map((answer) => ({
+          ...questionCategoryDirectives.map((answer) => ({
             bulleted_list_item: {
               rich_text: [{ text: { content: answer || "N/A" } }],
             },

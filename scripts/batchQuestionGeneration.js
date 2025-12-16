@@ -1,18 +1,136 @@
 require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
-const onlineJavaAssignment = require("/Users/kritanbhandari/Documents/QLCs/datasets_json/helen_submissions.json");
 
+const CSVFILENAME = "batch_questions_generated.csv";
+const maxAPIRetries = 3;
+
+// loading a specific percentage of java-assignments from a json file
+const javaAssingments = require("../scripts/sampling_datasets/sampled_assignments.json");
+// const javaAssingments = require("/Users/kritanbhandari/Documents/QLCs/datasets_json/helen_submissions.json");
+
+// system prompt to generate question categories
 const {
   systemPromptQuestionCategories,
 } = require("../utils/systemPromptQuestionCategories");
+
+// system prompt to generate questions from a speicifc question category
 const {
-  systemPromptSpecificQuestionType,
+  systemPromptSpecificQuestionCategory,
 } = require("../utils/promptFinalQuestion");
 
-const { generateQuestions } = require("../services/QuestionGeneration");
+// generateAIResponse makes the api calls
+const { generateAIResponse } = require("../services/responseGeneration");
+
+/**
+ * Generates question categories based on system prompt and students' submission.
+ * @param {string} submission - student's submission.
+ * @param {string} systemPrompt - systemPromptQuestionCategories is passed as the systemPrompt.
+ */
+const questionCategoriesGeneration = async (
+  submission,
+  systemPrompt,
+  maxAPIRetries
+) => {
+  let allGeneratedQuestionCategories = [];
+  const userPrompt = `
+            Student's code:
+            ${submission}
+  `;
+
+  // Call the AI service. We assume it returns a ready-to-use array of objects.
+  const questionCategoriesFromAI = await generateAIResponse(
+    systemPrompt,
+    userPrompt
+  );
+
+  let c = 0;
+  while (!questionCategoriesFromAI && c < maxAPIRetries) {
+    console.log(`generating question categories again. c = ${c}`);
+    questionCategoriesFromAI = await generateAIResponse(
+      systemPrompt,
+      userPrompt
+    );
+    c++;
+  }
+
+  if (questionCategoriesFromAI && Array.isArray(questionCategoriesFromAI)) {
+    questionCategoriesFromAI.forEach((q) => {
+      allGeneratedQuestionCategories.push({
+        ...q,
+      });
+    });
+  }
+  console.log(`\n--- Question Categories Successfully Generated.`);
+
+  return allGeneratedQuestionCategories;
+};
+
+/**
+ * Generates questions (one question as of now; can be used to generate more) based on system prompt and students' submission.
+ * @param {number} submissionIndex - the index of the submission. managed externally to track the number of submissions processed.
+ * @param {string} submission - student's submission.
+ * @param {string} systemPrompt - systemPromptSpecificQuestionCategory is passed as the systemPrompt.
+ * @param {JSON} questionCategory - a json object containing a questionCategory returned by AI.
+ * @param {number} maxAPIRetries - the number of times the API is called incase of failure.
+ */
+const questionGenerationFromQuestionCategories = async (
+  submissionIndex,
+  submission,
+  systemPrompt,
+  questionCategory,
+  maxAPIRetries
+) => {
+  let generatedQuestions = []; // storing all the generatedQuestions (only one for now; can be used to generate more).
+  try {
+    console.log("specific question");
+    const userPrompt = `
+                Students' code:
+                ${submission}
+    `;
+
+    // Call the AI service. We assume it returns a ready-to-use array of objects.
+    let questionsFromAI = await generateAIResponse(systemPrompt, userPrompt);
+
+    // simple loop to try generation maxAPIRetries times incase of failure.
+    let c = 0;
+    while (!questionsFromAI && c < maxAPIRetries) {
+      console.log(`generating questions again. c = ${c}`);
+      questionsFromAI = await generateAIResponse(systemPrompt, userPrompt);
+      c++;
+    }
+
+    // just making sure that questionsFromAI is populated & parsed into an array
+    if (questionsFromAI && Array.isArray(questionsFromAI)) {
+      questionsFromAI.forEach((q) => {
+        generatedQuestions.push({
+          submissionIndex: submissionIndex,
+          studentCode: submission.trim(), // Add the student's code
+          questionCategoryName: questionCategory.name,
+          questionCategoryDefinition: questionCategory.definition,
+          questionCategoryDirectives: questionCategory.generation_directives,
+          ...q, // Spread the rest of the question fields(if any)
+        });
+      });
+    }
+  } catch (error) {
+    console.error(
+      `Failed to process submission #${submissionIndex}:`,
+      error.message
+    );
+  }
+
+  // Writing to CSV, only used for notion.
+  if (generatedQuestions.length > 0) {
+    writeToCSV(CSVFILENAME, generatedQuestions);
+  } else {
+    console.log("No questions were generated, skipping CSV export.");
+  }
+};
+
 /**
  * Converts an array of question objects into a CSV-formatted string.
+ * Only to later load in Notion.
  */
 const convertToCSV = (questions) => {
   if (questions.length === 0) return "";
@@ -38,155 +156,87 @@ const convertToCSV = (questions) => {
 };
 
 /**
- * Main function to process submissions and write to a CSV.
- * @param {Array<string>} submissions - An array of strings, where each string is a student's combined code.
+ * Writes the generated questions to a csv file. Creates a new one if the fileName doesn't exist, otherwise appends to the fileName if exists.
+ * @param {string} fileName - complete filename with extension (.csv) to store the generated questions.
+ * @param {Array<string>} generatedQuestions - all the questions that were generated by the AI.
  */
-const questionTypeGeneration = async (submission, systemPrompt) => {
-  let allGeneratedQuestions = [];
-  const userPrompt = `
-            ### Students' code:
-            ${submission}
-  `;
+const writeToCSV = (fileName, generatedQuestions) => {
+  try {
+    const csvData = convertToCSV(generatedQuestions);
+    const filePath = path.join(__dirname, fileName);
 
-  // Call the AI service. We assume it returns a ready-to-use array of objects.
-  const questionsFromAI = await generateQuestions(systemPrompt, userPrompt);
+    const fileExists = fs.existsSync(filePath);
 
-  console.log(`\n--- Batch processing complete.`);
-  if (questionsFromAI && Array.isArray(questionsFromAI)) {
-    questionsFromAI.forEach((q) => {
-      allGeneratedQuestions.push({
-        ...q,
-      });
-    });
-  }
-  return allGeneratedQuestions;
-};
+    if (fileExists) {
+      // 1. If file exists, append data without the header
+      console.log(`File exists. Appending to: ${filePath}`);
 
-const questionGenerationFromQuestionTypes = async (
-  i,
-  submissions,
-  systemPrompt,
-  questionType
-) => {
-  console.log(
-    `--- Starting batch generation for ${submissions.length} code submissions ---`
-  );
-  let allGeneratedQuestions = [];
+      // Split data into lines and remove the header (the first line)
+      const lines = csvData.split("\n");
+      const dataWithoutHeader = lines.slice(1).join("\n");
 
-  for (const [index, code] of submissions.entries()) {
-    try {
-      console.log(`Processing submission #${index + 1}...`);
-      const userPrompt = `
-                ### Students' code:
-                ${code}
-    `;
-
-      // Call the AI service. We assume it returns a ready-to-use array of objects.
-      const questionsFromAI = await generateQuestions(systemPrompt, userPrompt);
-
-      let c = 0;
-
-      while (c != 3 && !questionsFromAI) {
-        questionsFromAI = await generateQuestions(systemPrompt, userPrompt);
-        c++;
+      // Add a newline before the new data to separate it
+      if (dataWithoutHeader) {
+        fs.appendFileSync(filePath, "\n" + dataWithoutHeader, "utf8");
       }
-
-      if (questionsFromAI && Array.isArray(questionsFromAI)) {
-        questionsFromAI.forEach((q) => {
-          allGeneratedQuestions.push({
-            submissionIndex: i,
-            studentCode: code.trim(), // Add the student's code
-            questionTypeName: questionType.name,
-            questionTypeDefinition: questionType.definition,
-            questionTypeDirectives: questionType.generation_directives,
-            ...q, // Spread the rest of the question fields (questionText, difficulty, etc.)
-          });
-        });
-        console.log(
-          `  -> Successfully generated ${questionsFromAI.length} questions.`
-        );
-      }
-    } catch (error) {
-      console.error(
-        `  -> ❌ Failed to process submission #${index + 1}:`,
-        error.message
-      );
+    } else {
+      // 2. If file does not exist, write the file normally (with header)
+      console.log(`Creating new file: ${filePath}`);
+      fs.writeFileSync(filePath, csvData, "utf8");
     }
-  }
-  console.log(
-    `\n--- Batch processing complete. Generated a total of ${allGeneratedQuestions.length} questions. ---`
-  );
-  // console.log(allGeneratedQuestions);
 
-  if (allGeneratedQuestions.length > 0) {
-    try {
-      const csvData = convertToCSV(allGeneratedQuestions);
-      const filePath = path.join(__dirname, "bulk_generated_questions2.csv");
-
-      const fileExists = fs.existsSync(filePath);
-
-      if (fileExists) {
-        // 1. If file exists, append data *without* the header
-        console.log(`File exists. Appending to: ${filePath}`);
-
-        // Split data into lines and remove the header (the first line)
-        const lines = csvData.split("\n");
-        const dataWithoutHeader = lines.slice(1).join("\n");
-
-        // Add a newline before the new data to separate it
-        if (dataWithoutHeader) {
-          fs.appendFileSync(filePath, "\n" + dataWithoutHeader, "utf8");
-        }
-      } else {
-        // 2. If file does not exist, write the file normally (with header)
-        console.log(`Creating new file: ${filePath}`);
-        fs.writeFileSync(filePath, csvData, "utf8");
-      }
-
-      console.log(`✅ Successfully saved all questions to: ${filePath}`);
-    } catch (error) {
-      console.error("❌ Error writing the CSV file:", error);
-    }
-  } else {
-    console.log("No questions were generated, skipping CSV export.");
+    console.log(`Successfully saved all questions to: ${filePath}`);
+  } catch (error) {
+    console.error("Error writing the CSV file:", error);
   }
 };
 
+/**
+ * Removes a file given it exists.
+ * @param {string} fileName - the full name of the file along with its extension.
+ */
+const removeFileIfExists = (fileName) => {
+  const filePath = path.join(__dirname, fileName);
+  const fileExists = fs.existsSync(filePath);
+  if (fileExists) {
+    fs.unlinkSync(filePath);
+    console.log(`Removing file: ${fileName}`);
+  }
+};
 // --- RUN THE SCRIPT ---
+const run = async () => {
+  // cleaning up prev csv.
+  removeFileIfExists(CSVFILENAME);
 
-// checking if file exisits and removing it
-const filePath = path.join(__dirname, "bulk_generated_questions2.csv");
-const fileExists = fs.existsSync(filePath);
-if (fileExists) {
-  fs.unlinkSync(filePath);
-}
+  // keeping the functionality of selecting a subset of javaAssignments for some small testing.
+  submissions = [];
+  for (let i = 0; i < 3; i++) {
+    submissionBeingProcessed = javaAssingments[i]["content"]; // extracting only the java portion of the json entries.
+    submissions.push(submissionBeingProcessed);
+  }
 
-// submissionBeingProcessed = helenSubmimssion[3];
-// submissionBeingProcessed = onlineJavaAssignment[0]["content"];
-submissions = [];
-for (let i = 0; i < 3; i++) {
-  submissionBeingProcessed = onlineJavaAssignment[i]["content"];
-  submissions.push(submissionBeingProcessed);
-}
-
-const a = async () => {
-  i = 1;
+  submissionIndex = 1;
   for (const submission of submissions) {
-    questionTypes = await questionTypeGeneration(
+    questionCategories = await questionCategoriesGeneration(
+      // generating question category for each submission
       submission,
-      systemPromptQuestionCategories()
+      systemPromptQuestionCategories(3, 6),
+      maxAPIRetries
     );
-    _submissions = Array.from({ length: 1 }, () => submission);
-    for (const questionType of questionTypes) {
-      questionPrompt = systemPromptSpecificQuestionType(questionType);
-      questionGenerationFromQuestionTypes(
-        i,
-        _submissions,
+
+    // generating question (one as of now) for each category; also writing to CSVFILENAME
+    for (const questionCategory of questionCategories) {
+      questionPrompt = systemPromptSpecificQuestionCategory(questionCategory);
+      questionGenerationFromQuestionCategories(
+        submissionIndex,
+        submission,
         questionPrompt,
-        questionType
+        questionCategory,
+        maxAPIRetries
       );
     }
-    i += 1;
+    submissionIndex += 1;
   }
 };
-a();
+
+run();
