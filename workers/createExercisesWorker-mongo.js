@@ -3,7 +3,6 @@
  * Run as: `node workers/createExercisesWorker-mongo.js`
  */
 const connectDB = require("../config/database.js");
-const mongoose = require("mongoose");
 const Job = require("../models/Job.js");
 const Exercise = require("../models/Exercise.js");
 const User = require("../models/User.js");

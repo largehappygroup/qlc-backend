@@ -51,7 +51,12 @@ const findSubmission = async (user, assignment) => {
                 },
                 { _id: 0 }
             );
-            const candidates = usersInStudy.sort(() => Math.random() - 0.5); // create a copy
+            const candidates = [...usersInStudy];
+            for (let i = candidates.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+            }
+            // ...existing code...
             // First, try to find a submission from other participants (random order)
             for (const candidate of candidates) {
                 const hasSubmission = await doesSubmissionFolderExist(
