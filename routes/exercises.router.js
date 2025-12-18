@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true });
+const { authenticate } = require("../middleware/auth.js");
 
 const {
     createExercise,
+    createExercises,
     deleteExercise,
     editExercise,
     getAllExercises,
@@ -12,17 +14,22 @@ const {
     getAverageScore,
     getAverageTimeSpent,
     getRecentActivity,
+    submitRatings,
+    getAverageScoreDistribution,
 } = require("../controllers/exercises.controller.js");
 
-router.post("/", createExercise);
-router.put("/:id", editExercise);
-router.get("/download", downloadExercises);
-router.get("/average", getAverageScore);
-router.get("/recent-activity", getRecentActivity);
-router.get("/time-spent", getAverageTimeSpent);
-router.get("/", getAllExercises);
-router.get("/:id", getExercise);
-router.delete("/:id", deleteExercise);
-router.post("/:id/check", checkQuestion);
+router.post("/", authenticate, createExercise);
+router.post("/batch", authenticate, createExercises);
+router.put("/:id/ratings", authenticate, submitRatings);
+router.put("/:id", authenticate, editExercise);
+router.get("/download", authenticate, downloadExercises);
+router.get("/distribution", authenticate, getAverageScoreDistribution);
+router.get("/average", authenticate, getAverageScore);
+router.get("/recent-activity", authenticate, getRecentActivity);
+router.get("/time-spent", authenticate, getAverageTimeSpent);
+router.get("/", authenticate, getAllExercises);
+router.get("/:id", authenticate, getExercise);
+router.delete("/:id", authenticate, deleteExercise);
+router.post("/:id/check", authenticate, checkQuestion);
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true });
+const { authenticate } = require("../middleware/auth.js");
 
 const {
     createChapter,
@@ -10,11 +11,11 @@ const {
     editAllChapters,
 } = require("../controllers/chapters.controller.js");
 
-router.post("/", createChapter);
-router.put("/", editAllChapters);
-router.put("/:id", editChapter);
-router.get("/", getAllChapters);
-router.get("/:id", getChapter);
-router.delete("/:id", deleteChapter);
+router.post("/", authenticate, createChapter);
+router.put("/", authenticate, editAllChapters);
+router.put("/:id", authenticate, editChapter);
+router.get("/", authenticate, getAllChapters);
+router.get("/:id", authenticate, getChapter);
+router.delete("/:id", authenticate, deleteChapter);
 
 module.exports = router;

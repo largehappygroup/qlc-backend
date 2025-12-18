@@ -16,13 +16,15 @@ const { ObjectId } = mongoose.Types;
  */
 const createUser = async (req, res) => {
     try {
+        // from vusso
         const email = req.headers["remote-user"];
         const firstName = req.headers["remote-user-given-name"];
         const lastName = req.headers["remote-user-family-name"];
         const vuNetId = req.headers["remote-user-vunetid"];
         const role = req.body.role || "student";
+        const studyGroup = Math.floor(Math.random() * 2) == 1 ? "A" : "B";
         if (firstName && lastName && vuNetId && email && role) {
-            let user = await User.findOne({ vuNetId });
+            let user = await User.findOne({ vuNetId }, { _id: 0 });
             if (!user) {
                 user = new User({
                     _id: new ObjectId(),
@@ -31,6 +33,7 @@ const createUser = async (req, res) => {
                     vuNetId,
                     email,
                     role,
+                    studyGroup,
                 });
                 await user.save();
             }
@@ -61,7 +64,7 @@ const deleteUser = async (req, res) => {
 
     try {
         if (id) {
-            const user = await User.findbyIdAndDelete(id);
+            const user = await User.findOneAndDelete({ uuid: id }, { _id: 0 });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -79,11 +82,21 @@ const deleteUser = async (req, res) => {
     }
 };
 
+/**
+ * Edits a user by ID.
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details
+ */
 const editUser = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const user = await User.findByIdAndUpdate(id, req.body);
+            const user = await User.findOneAndUpdate(
+                { vuNetId: id },
+                req.body,
+                { new: true, _id: 0 }
+            );
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -107,7 +120,7 @@ const getUser = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const user = await User.findById(id);
+            const user = await User.findOne({ vuNetId: id }, { _id: 0 });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -139,7 +152,7 @@ const getAllUsers = async (req, res) => {
             filter.role = new RegExp(role, "i");
         }
 
-        const users = await User.find(filter);
+        const users = await User.find(filter, { _id: 0 });
 
         return res.status(200).send(users);
     } catch (err) {
@@ -164,7 +177,7 @@ const downloadUsers = async (req, res) => {
         if (role) {
             filter.role = new RegExp(role, "i");
         }
-        const users = await User.find(filter).lean();
+        const users = await User.find(filter, { _id: 0 }).lean();
         const opts = {
             transforms: [
                 flatten({ object: true, array: true, separator: "|" }),
@@ -186,118 +199,6 @@ const downloadUsers = async (req, res) => {
 };
 
 /**
- * Gets the distribution of average scores across all students or a specific student if userId is provided
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
- */
-const getAverageScoreDistribution = async (req, res) => {
-    const { userId } = req.query;
-    try {
-        let results = [
-            {
-                percentage: "0-49",
-                data: 0,
-                color: "red",
-            },
-            {
-                percentage: "50-59",
-                data: 0,
-                color: "purple",
-            },
-            {
-                percentage: "60-69",
-                data: 0,
-                color: "orange",
-            },
-            {
-                percentage: "70-79",
-                data: 0,
-                color: "yellow",
-            },
-            {
-                percentage: "80-89",
-                data: 0,
-                color: "blue",
-            },
-            {
-                percentage: "90-100",
-                data: 0,
-                color: "green",
-            },
-        ];
-        if (userId) {
-            const userExercises = await Exercise.find({
-                userId: ObjectId.createFromHexString(userId),
-                status: "Complete",
-            });
-            for (const exercise of userExercises) {
-                const score =
-                    (exercise.totalCorrect / exercise.questions.length) * 100;
-                let range = null;
-                if (score < 50) range = "0-49";
-                else if (score < 60) range = "50-59";
-                else if (score < 70) range = "60-69";
-                else if (score < 80) range = "70-79";
-                else if (score < 90) range = "80-89";
-                else if (score <= 100) range = "90-100";
-                else throw new Error("Unnatural average calculated: " + score);
-
-                const resultItem = results.find((r) => r.percentage === range);
-                if (resultItem) {
-                    resultItem.data += 1;
-                }
-            }
-        } else {
-            const users = await User.find({ role: "student" });
-
-            for (const user of users) {
-                const userExercises = await Exercise.find({
-                    userId: user._id,
-                    status: "Complete",
-                });
-                if (userExercises.length > 0) {
-                    const average =
-                        userExercises.reduce(function (acc, exercise) {
-                            acc +=
-                                (exercise.totalCorrect /
-                                    exercise.questions.length) *
-                                100;
-                            return acc;
-                        }, 0) / userExercises.length;
-
-                    let range = null;
-                    if (average < 50) range = "0-49";
-                    else if (average < 60) range = "50-59";
-                    else if (average < 70) range = "60-69";
-                    else if (average < 80) range = "70-79";
-                    else if (average < 90) range = "80-89";
-                    else if (average <= 100) range = "90-100";
-                    else
-                        throw new Error(
-                            "Unnatural average calculated: " + average
-                        );
-
-                    const resultItem = results.find(
-                        (r) => r.percentage === range
-                    );
-                    if (resultItem) {
-                        resultItem.data += 1;
-                    }
-                }
-            }
-        }
-
-        return res.status(200).json(results);
-    } catch (err) {
-        console.error(err);
-        return res
-            .status(500)
-            .send({ message: "Internal Server Error.", error: err });
-    }
-};
-
-/**
  * Gets the total number of students
  * @param {*} req
  * @param {*} res
@@ -305,7 +206,7 @@ const getAverageScoreDistribution = async (req, res) => {
  */
 const getTotalStudents = async (req, res) => {
     try {
-        const students = await User.find({ role: "student" });
+        const students = await User.find({ role: "student" }, { _id: 0 });
         return res.status(200).json(students.length);
     } catch (err) {
         console.error(err);
@@ -337,7 +238,10 @@ const uploadUsers = async (req, res) => {
                 }
             })
             .on("data", async (row) => {
-                let user = await User.findOne({ vuNetId: row["vuNetId"] });
+                let user = await User.findOne(
+                    { vuNetId: row["vuNetId"] },
+                    { _id: 0 }
+                );
                 if (!user) {
                     user = new User(row);
                 } else {
@@ -355,36 +259,6 @@ const uploadUsers = async (req, res) => {
     }
 };
 
-/**
- * assigns students to group A or B randomly if they are participating in the study and not already assigned
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
- */
-const assignGroups = async (req, res) => {
-    try {
-        const students = await User.find({ role: "student" });
-        for (const student of students) {
-            if (
-                student.studyParticipation &&
-                (!student.studyGroup ||
-                    student.studyGroup != "A" ||
-                    student.studyGroup != "B")
-            ) {
-                student.studyGroup =
-                    Math.floor(Math.random() * 2) == 1 ? "A" : "B";
-            }
-            student.save();
-        }
-        return res.status(200).send({ message: "Success." });
-    } catch (err) {
-        console.error(err);
-        return res
-            .status(500)
-            .send({ message: "Internal Server Error", error: err });
-    }
-};
-
 module.exports = {
     createUser,
     deleteUser,
@@ -393,7 +267,5 @@ module.exports = {
     getAllUsers,
     downloadUsers,
     uploadUsers,
-    getAverageScoreDistribution,
     getTotalStudents,
-    assignGroups,
 };

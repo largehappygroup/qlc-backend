@@ -36,15 +36,15 @@ function buildApiPayload(systemPrompt, userPrompt) {
  * @returns {object | undefined} The parsed JavaScript object, or undefined if parsing fails.
  */
 function parseAIResponse(responseData) {
-  try {
-    return JSON.parse(responseData);
-  } catch (error) {
-    console.error(
-      "JSON formatting not correct. Either some weird formatting in the AI response, or it may have been cut off by max_tokens."
-    );
-    console.error("Received data:", responseData);
-    return undefined; // Explicitly return undefined on failure
-  }
+    try {
+        return JSON.parse(responseData);
+    } catch (error) {
+        console.error(
+            "JSON formatting not correct. Either some weird formatting in the AI response, or it may have been cut off by max_tokens."
+        );
+        console.error("Received data:", responseData);
+        return undefined; // Explicitly return undefined on failure
+    }
 }
 
 /**
@@ -60,39 +60,42 @@ const generateAIResponse = async (systemPrompt, userPrompt) => {
     throw new Error("AMPLIFY API key is missing.");
   }
 
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${AMPLIFY_API_KEY}`,
-  };
+    const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${AMPLIFY_API_KEY}`,
+    };
 
-  const payload = buildApiPayload(systemPrompt, userPrompt);
+    const payload = buildApiPayload(systemPrompt, userPrompt);
 
-  try {
-    const response = await axios.post(API_ENDPOINT, payload, { headers });
+    // Log payload for debugging
+    console.log("Payload being sent to API:", JSON.stringify(payload, null, 2));
 
-    // With axios, the response data is directly on the .data property
-    const responseData = response.data;
+    try {
+        const response = await axios.post(API_ENDPOINT, payload, { headers });
 
-    // only passing the questions from the response data as JSON objects after parsing
-    // Note: API nests the data twice, so we pass response.data.data
-    return parseAIResponse(responseData.data);
-  } catch (error) {
-    console.error("Error making API request:");
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      console.error("Data:", error.response.data);
-      console.error("Status:", error.response.status);
-      console.error("Headers:", error.response.headers);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error("Request:", error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error("Error Message:", error.message);
+        // With axios, the response data is directly on the .data property
+        const responseData = response.data;
+
+        // only passing the questions from the response data as JSON objects after parsing
+        // Note: API nests the data twice, so we pass response.data.data
+        return parseAIResponse(responseData.data);
+    } catch (error) {
+        console.error("Error making API request:");
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            console.error("Data:", error.response.data);
+            console.error("Status:", error.response.status);
+            console.error("Headers:", error.response.headers);
+        } else if (error.request) {
+            // The request was made but no response was received
+            console.error("Request:", error.request);
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            console.error("Error Message:", error.message);
+        }
     }
-  }
 };
 
 module.exports = {
-  generateAIResponse,
+    generateAIResponse,
 };

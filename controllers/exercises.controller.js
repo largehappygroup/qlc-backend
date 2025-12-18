@@ -1,48 +1,57 @@
 const Exercise = require("../models/Exercise.js");
-const ChapterAssignment = require("../models/ChapterAssignment.js");
+const Assignment = require("../models/Assignment.js");
 const User = require("../models/User.js");
+const Chapter = require("../models/Chapter.js");
 const mongoose = require("mongoose");
+
+const { ObjectId } = mongoose.Types;
+const crypto = require("crypto");
+
 const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
-const { ObjectId } = mongoose.Types;
+
+const Job = require("../models/Job.js");
+const { spawn } = require("child_process");
+const path = require("path");
+
+const { filterQuestion } = require("../utils/exercise_helpers.js");
+const { generateExercise } = require("../services/exerciseGenerator.js");
 
 /**
  * Creates a new exercise with AI.
  * @param {*} req - request details
  * @param {*} res - response details
- * @returns - response details (with status)
+ * @returns - {exercise: created exercise details, studentCode: code associated with the exercise}
  */
 const createExercise = async (req, res) => {
-    const { userId } = req.query;
+    const { userId, assignmentId } = req.query;
     try {
-        if (userId) {
-            const date = new Date();
-
-            const search = await Exercise.findOne({
-                date: {
-                    $gte: new Date(date.setHours(0, 0, 0, 0)), // Start date
-                    $lte: new Date(date.setHours(23, 59, 59, 999)), // End date
+        if (userId && assignmentId) {
+            const search = await Exercise.findOne(
+                {
+                    userId,
+                    assignmentId,
                 },
-            });
+                { _id: 0 }
+            ).lean();
 
             if (search) {
-                return res.status(201).json(search);
+                for (let i = 0; i < search.questions.length; i++) {
+                    const question = search.questions[i];
+                    search.questions[i] = filterQuestion(question);
+                }
+
+                return res.status(201).json({ exercise: search });
+            }
+            const exercise = await generateExercise(userId, assignmentId);
+            await exercise.save();
+            const returnExercise = exercise.toObject();
+            for (let i = 0; i < returnExercise.questions.length; i++) {
+                const question = returnExercise.questions[i];
+                returnExercise.questions[i] = filterQuestion(question);
             }
 
-            const questions = [];
-            const exercise = new Exercise({
-                _id: new ObjectId(),
-                date,
-                userId,
-                topics: ["Programming"],
-                questions,
-                status: "incomplete",
-                totalTimeSpent: 0,
-                totalCorrect: 0,
-            });
-            await exercise.save();
-
-            return res.status(200).json(exercise);
+            return res.status(200).json({ exercise: returnExercise });
         } else {
             return res.status(400).send({ message: "User ID not found." });
         }
@@ -52,6 +61,143 @@ const createExercise = async (req, res) => {
             message: "Error when initializing exercise.",
             error: err.message,
         });
+    }
+};
+
+/**
+ * creates exercises for all students in a chapter
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
+const createExercises = async (req, res) => {
+    const { chapterId } = req.query;
+
+    try {
+        if (chapterId) {
+            // compute totalTasks so frontend can show progress if desired
+            const students = await User.find(
+                { role: "student" },
+                { _id: 0, vuNetId: 1 }
+            );
+
+            const chapter = await Chapter.findOne(
+                { uuid: chapterId },
+                { _id: 0 }
+            );
+
+            const totalTasks =
+                students.length * (chapter?.assignmentIds?.length || 0);
+
+            // create a Job document so a background script can pick it up
+            const job = await Job.create({
+                type: "createExercises",
+                payload: {
+                    chapterId,
+                    requestedBy: req.headers["remote-user-vunetid"],
+                },
+                totalTasks,
+                progress: 0,
+                status: "pending",
+            });
+
+            // spawn a detached Node process to run the pregenerate script asynchronously
+            try {
+                const nodeBin = process.execPath;
+                const scriptPath = path.join(__dirname, "..", "workers", "pregenerateExercises.js");
+                const child = spawn(nodeBin, [scriptPath, job._id.toString()], {
+                    detached: true,
+                    stdio: "ignore",
+                });
+                // allow the child to continue running after this process exits
+                child.unref();
+            } catch (spawnErr) {
+                console.error("Failed to spawn pregenerate script:", spawnErr.message);
+                // do not fail the HTTP request — job will remain pending and can be processed later
+            }
+
+            return res.status(202).json({
+                jobId: job._id,
+                statusUrl: `/jobs/${job._id}`,
+                message: "Exercise creation requested. Processing in background.",
+            });
+        } else {
+            return res.status(400).send({ message: "Chapter ID not found." });
+        }
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({
+            message: "Error when queuing exercises creation.",
+            error: err.message,
+        });
+    }
+};
+
+/**
+ * Returns status for a queued job
+ */
+const getJobStatus = async (req, res) => {
+    const jobId = req.params?.id;
+    try {
+        if (!jobId) return res.status(400).send({ message: "Missing Job ID." });
+
+        const job = await Job.findById(jobId).lean();
+        if (!job) return res.status(404).send({ message: "Job not found." });
+
+        return res.status(200).json({
+            id: job._id,
+            type: job.type,
+            payload: job.payload,
+            status: job.status,
+            progress: job.progress || 0,
+            totalTasks: job.totalTasks || 0,
+            completedTasks: job.completedTasks || 0,
+            failedReason: job.failedReason || null,
+            result: job.result || null,
+            createdAt: job.createdAt,
+            updatedAt: job.updatedAt,
+        });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({
+            message: "Issue retrieving job status.",
+            error: err.message,
+        });
+    }
+};
+
+/**
+ * Returns active job for a chapter (pending or in-progress)
+ */
+const getJobByChapter = async (req, res) => {
+    const chapterId = req.params?.chapterId;
+    try {
+        if (!chapterId) return res.status(400).send({ message: "Missing Chapter ID." });
+
+        const job = await Job.findOne({
+            "payload.chapterId": chapterId,
+            status: { $in: ["pending", "in-progress"] },
+        })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        if (!job) return res.status(404).send({ message: "No active job for chapter." });
+
+        return res.status(200).json({
+            id: job._id,
+            type: job.type,
+            payload: job.payload,
+            status: job.status,
+            progress: job.progress || 0,
+            totalTasks: job.totalTasks || 0,
+            completedTasks: job.completedTasks || 0,
+            failedReason: job.failedReason || null,
+            createdAt: job.createdAt,
+            updatedAt: job.updatedAt,
+        });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({ message: "Issue retrieving job by chapter.", error: err.message });
     }
 };
 
@@ -66,7 +212,10 @@ const deleteExercise = async (req, res) => {
 
     try {
         if (id) {
-            const exercise = await Exercise.findbyIdAndDelete(id);
+            const exercise = await Exercise.findOneAndDelete(
+                { uuid: id },
+                { _id: 0 }
+            );
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -95,7 +244,11 @@ const editExercise = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const exercise = await Exercise.findByIdAndUpdate(id, req.body);
+            const exercise = await Exercise.findOneAndUpdate(
+                { uuid: id },
+                req.body,
+                { new: true, _id: 0 }
+            );
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
@@ -124,36 +277,17 @@ const getExercise = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const exercise = await Exercise.findById(id).lean();
+            const exercise = await Exercise.findOne(
+                { uuid: id },
+                { _id: 0 }
+            ).lean();
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
 
             for (let i = 0; i < exercise.questions.length; i++) {
                 const question = exercise.questions[i];
-                let availableAnswers = [
-                    question.correctAnswer,
-                    ...question.otherAnswers,
-                ]
-                    .map((value) => ({ value, sort: Math.random() }))
-                    .sort((a, b) => a.sort - b.sort)
-                    .map(({ value }) => value);
-
-                const filteredQuestion = {
-                    _id: question._id,
-                    query: question.query,
-                    type: question.type,
-                    hints: question.hints,
-                    topics: question.topics,
-                    difficulty: question.difficulty,
-                    explanation: question.explanation,
-                    availableAnswers,
-                    userAnswers: question.userAnswers,
-                    timeSpent: question.timeSpent,
-                    correct: question.correct,
-                };
-
-                exercise.questions[i] = filteredQuestion;
+                exercise.questions[i] = filterQuestion(question);
             }
 
             return res.status(200).json(exercise);
@@ -181,11 +315,11 @@ const getAllExercises = async (req, res) => {
         let filter = {};
 
         if (userId) {
-            filter.userId = ObjectId.createFromHexString(userId);
+            filter.userId = userId;
         }
 
         if (assignmentId) {
-            filter.assignmentId = ObjectId.createFromHexString(assignmentId);
+            filter.assignmentId = assignmentId;
         }
 
         if (date) {
@@ -208,7 +342,7 @@ const getAllExercises = async (req, res) => {
             }
         }
 
-        const exercises = await Exercise.find(filter).lean();
+        const exercises = await Exercise.find(filter, { _id: 0 }).lean();
 
         for (let j = 0; j < exercises.length; j++) {
             const exercise = exercises[j];
@@ -225,11 +359,11 @@ const getAllExercises = async (req, res) => {
 
                 const filteredQuestion = {
                     _id: question._id,
+                    uuid: question.uuid,
                     query: question.query,
                     type: question.type,
                     hints: question.hints,
                     topics: question.topics,
-                    difficulty: question.difficulty,
                     explanation: question.explanation,
                     availableAnswers,
                     userAnswers: question.userAnswers,
@@ -240,7 +374,7 @@ const getAllExercises = async (req, res) => {
                 exercises[j].questions[i] = filteredQuestion;
             }
         }
-
+        console.log(filter);
         return res.status(200).json(exercises);
     } catch (err) {
         console.error(err.message);
@@ -255,7 +389,7 @@ const downloadExercises = async (req, res) => {
     const { fields } = req.query;
 
     try {
-        const exercises = await Exercise.find().lean();
+        const exercises = await Exercise.find({}, { _id: 0 }).lean();
         const opts = {
             transforms: [
                 unwind({
@@ -279,19 +413,65 @@ const downloadExercises = async (req, res) => {
     }
 };
 
+const submitRatings = async (req, res) => {
+    const exerciseId = req.params?.id;
+    const { questionId, ratings } = req.body;
+
+    try {
+        const exercise = await Exercise.findOne({ uuid: exerciseId });
+        if (!exercise) {
+            return res.status(404).send({ message: "Exercise not found." });
+        }
+
+        const question = exercise.questions.find((q) => questionId === q.uuid);
+        if (!question) {
+            return res.status(404).send({ message: "Question not found." });
+        }
+
+        if (
+            ratings &&
+            typeof ratings === "object" &&
+            !(ratings instanceof Map)
+        ) {
+            question.ratings = new Map(Object.entries(ratings));
+        } else {
+            question.ratings = ratings;
+        }
+
+        await exercise.save();
+
+        return res
+            .status(200)
+            .send({ message: "Ratings submitted successfully." });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).send({
+            message: "Issue with submitting ratings.",
+            error: err.message,
+        });
+    }
+};
+
+/**
+ * checks the user's answer for a question in an exercise
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const checkQuestion = async (req, res) => {
     const id = req.params?.id; // exercise id
     const { questionId } = req.query;
-    const { userAnswer, timeSpent, flagged } = req.body;
+    const { userAnswer, timeSpent } = req.body;
+    console.log(req.body);
     try {
         if (id) {
-            const exercise = await Exercise.findById(id);
+            const exercise = await Exercise.findOne({ uuid: id });
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
 
-            const question = exercise.questions.find((question) =>
-                ObjectId.createFromHexString(questionId).equals(question._id)
+            const question = exercise.questions.find(
+                (question) => questionId === question.uuid
             );
             if (!question) {
                 return res.status(404).send({ message: "Question not found." });
@@ -321,7 +501,6 @@ const checkQuestion = async (req, res) => {
             }
 
             question.timeSpent = timeSpent;
-            question.flagged = flagged;
 
             question.userAnswers = [
                 ...question.userAnswers,
@@ -332,7 +511,7 @@ const checkQuestion = async (req, res) => {
                 },
             ];
 
-            exercise.save();
+            await exercise.save();
 
             return res.status(200).json({ result });
         } else {
@@ -348,10 +527,10 @@ const checkQuestion = async (req, res) => {
 };
 
 /**
- *
- * @param {*} req
- * @param {*} res
- * @returns
+ * gets the average score for all completed exercises, optionally filtered by userId
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
  */
 const getAverageScore = async (req, res) => {
     const { userId } = req.query;
@@ -359,9 +538,9 @@ const getAverageScore = async (req, res) => {
         let filter = { status: "Complete" };
 
         if (userId) {
-            filter.userId = ObjectId.createFromHexString(userId);
+            filter.userId = userId;
         }
-        const exercises = await Exercise.find(filter);
+        const exercises = await Exercise.find(filter, { _id: 0 });
         if (exercises.length > 0) {
             const average =
                 exercises.reduce(function (acc, exercise) {
@@ -382,15 +561,21 @@ const getAverageScore = async (req, res) => {
     }
 };
 
+/**
+ * gets the average time spent on all completed exercises, optionally filtered by userId
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const getAverageTimeSpent = async (req, res) => {
     const { userId } = req.query;
     try {
         let filter = { status: "Complete" };
 
         if (userId) {
-            filter.userId = ObjectId.createFromHexString(userId);
+            filter.userId = userId;
         }
-        const exercises = await Exercise.find(filter);
+        const exercises = await Exercise.find(filter, { _id: 0 });
         if (exercises.length > 0) {
             const timeSpent =
                 exercises.reduce(function (acc, exercise) {
@@ -417,25 +602,156 @@ const getAverageTimeSpent = async (req, res) => {
     }
 };
 
+/**
+ * Gets the distribution of average scores across all students or a specific student if userId is provided
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
+const getAverageScoreDistribution = async (req, res) => {
+    const { userId } = req.query;
+    try {
+        let results = [
+            {
+                percentage: "0-49",
+                data: 0,
+                color: "red",
+            },
+            {
+                percentage: "50-59",
+                data: 0,
+                color: "purple",
+            },
+            {
+                percentage: "60-69",
+                data: 0,
+                color: "orange",
+            },
+            {
+                percentage: "70-79",
+                data: 0,
+                color: "yellow",
+            },
+            {
+                percentage: "80-89",
+                data: 0,
+                color: "blue",
+            },
+            {
+                percentage: "90-100",
+                data: 0,
+                color: "green",
+            },
+        ];
+        if (userId) {
+            const userExercises = await Exercise.find(
+                {
+                    userId: userId,
+                    status: "Complete",
+                },
+                { _id: 0 }
+            );
+            for (const exercise of userExercises) {
+                const score =
+                    (exercise.totalCorrect / exercise.questions.length) * 100;
+                let range = null;
+
+                if (score < 50) range = "0-49";
+                else if (score < 60) range = "50-59";
+                else if (score < 70) range = "60-69";
+                else if (score < 80) range = "70-79";
+                else if (score < 90) range = "80-89";
+                else if (score <= 100) range = "90-100";
+                else throw new Error("Unnatural average calculated: " + score);
+
+                const resultItem = results.find((r) => r.percentage === range);
+                if (resultItem) {
+                    resultItem.data += 1;
+                }
+            }
+        } else {
+            const users = await User.find({}, { _id: 0 });
+
+            for (const user of users) {
+                const userExercises = await Exercise.find(
+                    {
+                        userId: user.vuNetId,
+                        status: "Complete",
+                    },
+                    { _id: 0 }
+                );
+                if (userExercises.length > 0) {
+                    const average =
+                        userExercises.reduce(function (acc, exercise) {
+                            acc +=
+                                (exercise.totalCorrect /
+                                    exercise.questions.length) *
+                                100;
+                            return acc;
+                        }, 0) / userExercises.length;
+
+                    let range = null;
+                    if (average < 50) range = "0-49";
+                    else if (average < 60) range = "50-59";
+                    else if (average < 70) range = "60-69";
+                    else if (average < 80) range = "70-79";
+                    else if (average < 90) range = "80-89";
+                    else if (average <= 100) range = "90-100";
+                    else
+                        throw new Error(
+                            "Unnatural average calculated: " + average
+                        );
+
+                    const resultItem = results.find(
+                        (r) => r.percentage === range
+                    );
+                    if (resultItem) {
+                        resultItem.data += 1;
+                    }
+                }
+            }
+        }
+
+        return res.status(200).json(results);
+    } catch (err) {
+        console.error(err);
+        return res
+            .status(500)
+            .send({ message: "Internal Server Error.", error: err });
+    }
+};
+
+/**
+ * gets recent activity, optionally filtered by userId
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const getRecentActivity = async (req, res) => {
     const { userId } = req.query;
 
     try {
         let filter = { status: "Complete" };
         if (userId) {
-            filter.userId = ObjectId.createFromHexString(userId);
+            filter.userId = userId;
         }
 
-        const exercises = await Exercise.find(filter)
+        const exercises = await Exercise.find(filter, { _id: 0 })
             .sort({ completedTimestamp: -1 })
             .limit(10);
 
         let results = [];
 
         for (const exercise of exercises) {
-            const user = await User.findById(exercise.userId);
-            const assignment = await ChapterAssignment.findById(
-                exercise.assignmentId
+            const user = await User.findOne(
+                { vuNetId: exercise.userId },
+                { _id: 0 }
+            );
+            const assignment = await Assignment.findOne(
+                {
+                    uuid: exercise.assignmentId,
+                },
+                { _id: 0 }
             );
             const dateTimestamp = new Date(exercise.completedTimestamp);
             const now = new Date();
@@ -499,6 +815,7 @@ const getRecentActivity = async (req, res) => {
 
 module.exports = {
     createExercise,
+    createExercises,
     deleteExercise,
     editExercise,
     getExercise,
@@ -508,4 +825,8 @@ module.exports = {
     getAverageScore,
     getAverageTimeSpent,
     getRecentActivity,
+    submitRatings,
+    getAverageScoreDistribution,
+    getJobStatus,
+    getJobByChapter,
 };
