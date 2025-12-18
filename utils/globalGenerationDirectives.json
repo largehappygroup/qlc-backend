@@ -1,0 +1,7 @@
+[
+  "Provide concrete, new input values for all required variables or parameters.",
+  "Explicitly mention the name of the variable/method that you're referring to.",
+  "Do not ask questions that have anything to do with the Random class or it's seed. Do not even mention seed.",
+  "Do not ask questions that ask about the quality of the written code or to critique a piece of code.",
+  "Do not generate question types that ask about the role/purpose of a variable, line, method, object or class."
+]
