@@ -7,9 +7,13 @@ const crypto = require("crypto");
 const { generateQuestions } = require("./questionGeneration.js");
 const { fetchStudentCode } = require("../utils/studentCode.js");
 const {
-    systemPrompt,
+  systemPromptQuestionCategories,
+} = require("../utils/systemPromptQuestionCategories");
+
+const {
+    systemPromptSpecificQuestionCategory,
     userPrompt,
-} = require("../utils/prompt_question_types.js");
+} = require("../utils/promptFinalQuestion.js");
 const { findSubmission } = require("../utils/exerciseHelpers.js");
 
 const { ObjectId } = mongoose.Types;
@@ -142,22 +146,26 @@ const generateExercise = async (userId, assignmentId) => {
         assignment.identifier
     );
 
-    const questionTypes = ["Variable State Trace", "Execution Path Analysis"];
+    const questionCategories = await questionCategoriesGeneration(
+        studentCode,
+        systemPromptQuestionCategories(3, 6),
+        3 // max retries
+    );
 
     let questions = [];
 
     let numberOfQuestions = 5;
-    const typesCount = questionTypes.length;
+    const typesCount = questionCategories.length;
     const base = Math.floor(numberOfQuestions / typesCount);
     const remainder = numberOfQuestions % typesCount;
 
     for (let i = 0; i < typesCount; i++) {
-        const qt = questionTypes[i];
+        const qt = questionCategories[i];
         const count = i === typesCount - 1 ? base + remainder : base;
 
         if (count <= 0) continue;
 
-        const systemPromptText = systemPrompt(qt, count);
+        const systemPromptText = systemPromptSpecificQuestionCategory(qt, count);
         const userPromptText = await userPrompt(studentCode);
         let questionsForType = await generateQuestions(
             systemPromptText,

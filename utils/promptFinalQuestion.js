@@ -6,7 +6,7 @@ const path = require("path");
  * @param {string} questionCategory - The category of question returned by the LLM, along with generation directives.
  * @returns {string} A detailed instruction string, formatted and ready to be sent to the AI.
  */
-const systemPromptSpecificQuestionCategory = (questionCategory) => {
+const systemPromptSpecificQuestionCategory = (questionCategory, numberOfQuestions = 1) => {
     // Maintaining a global generation directives based on experimental results.
     const globalGenerationDirectives = JSON.parse(
         fs.readFileSync(
