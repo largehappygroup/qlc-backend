@@ -5,12 +5,130 @@ const mongoose = require("mongoose");
 const crypto = require("crypto");
 
 const { generateQuestions } = require("./questionGeneration.js");
-const { fetchStudentCode } = require("../utils/student_code.js");
-const { systemPrompt, userPrompt } = require("../utils/prompt_question_types.js");
-const { findSubmission } = require("../utils/exercise_helpers.js");
+const { fetchStudentCode } = require("../utils/studentCode.js");
+const {
+    systemPrompt,
+    userPrompt,
+} = require("../utils/prompt_question_types.js");
+const { findSubmission } = require("../utils/exerciseHelpers.js");
 
 const { ObjectId } = mongoose.Types;
 
+/**
+ * Generates question categories based on system prompt and students' submission.
+ * @param {string} submission - student's submission.
+ * @param {string} systemPrompt - systemPromptQuestionCategories is passed as the systemPrompt.
+ */
+const questionCategoriesGeneration = async (
+    submission,
+    systemPrompt,
+    maxAPIRetries
+) => {
+    let allGeneratedQuestionCategories = [];
+    const userPrompt = `
+            Student's code:
+            ${submission}
+  `;
+
+    // Call the AI service. We assume it returns a ready-to-use array of objects.
+    const questionCategoriesFromAI = await generateAIResponse(
+        systemPrompt,
+        userPrompt
+    );
+
+    let c = 0;
+    while (!questionCategoriesFromAI && c < maxAPIRetries) {
+        console.log(`generating question categories again. c = ${c}`);
+        questionCategoriesFromAI = await generateAIResponse(
+            systemPrompt,
+            userPrompt
+        );
+        c++;
+    }
+
+    if (questionCategoriesFromAI && Array.isArray(questionCategoriesFromAI)) {
+        questionCategoriesFromAI.forEach((q) => {
+            allGeneratedQuestionCategories.push({
+                ...q,
+            });
+        });
+    }
+    console.log(`\n--- Question Categories Successfully Generated.`);
+
+    return allGeneratedQuestionCategories;
+};
+
+/**
+ * Generates questions (one question as of now; can be used to generate more) based on system prompt and students' submission.
+ * @param {number} submissionIndex - the index of the submission. managed externally to track the number of submissions processed.
+ * @param {string} submission - student's submission.
+ * @param {string} systemPrompt - systemPromptSpecificQuestionCategory is passed as the systemPrompt.
+ * @param {JSON} questionCategory - a json object containing a questionCategory returned by AI.
+ * @param {number} maxAPIRetries - the number of times the API is called incase of failure.
+ */
+const questionGenerationFromQuestionCategories = async (
+    submissionIndex,
+    submission,
+    systemPrompt,
+    questionCategory,
+    maxAPIRetries
+) => {
+    let generatedQuestions = []; // storing all the generatedQuestions (only one for now; can be used to generate more).
+    try {
+        const userPrompt = userPrompt(submission);
+        
+        // Call the AI service. We assume it returns a ready-to-use array of objects.
+        let questionsFromAI = await generateAIResponse(
+            systemPrompt,
+            userPrompt
+        );
+
+        // simple loop to try generation maxAPIRetries times incase of failure.
+        let c = 0;
+        while (!questionsFromAI && c < maxAPIRetries) {
+            console.log(`generating questions again. c = ${c}`);
+            questionsFromAI = await generateAIResponse(
+                systemPrompt,
+                userPrompt
+            );
+            c++;
+        }
+
+        // just making sure that questionsFromAI is populated & parsed into an array
+        if (questionsFromAI && Array.isArray(questionsFromAI)) {
+            questionsFromAI.forEach((q) => {
+                generatedQuestions.push({
+                    submissionIndex: submissionIndex,
+                    studentCode: submission.trim(), // Add the student's code
+                    questionCategoryName: questionCategory.name,
+                    questionCategoryDefinition: questionCategory.definition,
+                    questionCategoryDirectives:
+                        questionCategory.generation_directives,
+                    ...q, // Spread the rest of the question fields(if any)
+                });
+            });
+        }
+    } catch (error) {
+        console.error(
+            `Failed to process submission #${submissionIndex}:`,
+            error.message
+        );
+    }
+
+    // Writing to CSV, only used for notion.
+    if (generatedQuestions.length > 0) {
+        writeToCSV(CSVFILENAME, generatedQuestions);
+    } else {
+        console.log("No questions were generated, skipping CSV export.");
+    }
+};
+
+/**
+ * creates an exercise for a given user and assignment.
+ * @param {*} userId - vunetid of the user requesting the exercise
+ * @param {*} assignmentId - uuid of the assignment for which to create the exercise
+ * @returns - the created exercise object
+ */
 const generateExercise = async (userId, assignmentId) => {
     const user = await User.findOne({ vuNetId: userId }, { _id: 0 });
     const assignment = await Assignment.findOne(
@@ -19,7 +137,10 @@ const generateExercise = async (userId, assignmentId) => {
     );
     const author = await findSubmission(user, assignment);
 
-    const studentCode = await fetchStudentCode(author.email, assignment.identifier);
+    const studentCode = await fetchStudentCode(
+        author.email,
+        assignment.identifier
+    );
 
     const questionTypes = ["Variable State Trace", "Execution Path Analysis"];
 
@@ -38,7 +159,10 @@ const generateExercise = async (userId, assignmentId) => {
 
         const systemPromptText = systemPrompt(qt, count);
         const userPromptText = await userPrompt(studentCode);
-        let questionsForType = await generateQuestions(systemPromptText, userPromptText);
+        let questionsForType = await generateQuestions(
+            systemPromptText,
+            userPromptText
+        );
 
         // Add additional fields to each question
         questionsForType = questionsForType.map((question) => ({

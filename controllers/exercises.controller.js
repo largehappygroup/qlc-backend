@@ -5,7 +5,6 @@ const Chapter = require("../models/Chapter.js");
 const mongoose = require("mongoose");
 
 const { ObjectId } = mongoose.Types;
-const crypto = require("crypto");
 
 const { Parser } = require("json2csv");
 const { unwind, flatten } = require("@json2csv/transforms");
@@ -13,12 +12,13 @@ const { unwind, flatten } = require("@json2csv/transforms");
 const Job = require("../models/Job.js");
 const { spawn } = require("child_process");
 const path = require("path");
+const crypto = require("crypto");
 
-const { filterQuestion } = require("../utils/exercise_helpers.js");
+const { filterQuestion } = require("../utils/exerciseHelpers.js");
 const { generateExercise } = require("../services/exerciseGenerator.js");
 
 /**
- * Creates a new exercise with AI.
+ * Creates a single, new exercise with AI. post /exercises
  * @param {*} req - request details
  * @param {*} res - response details
  * @returns - {exercise: created exercise details, studentCode: code associated with the exercise}
@@ -65,7 +65,7 @@ const createExercise = async (req, res) => {
 };
 
 /**
- * creates exercises for all students in a chapter
+ * creates exercises for all students in a chapter post /exercises/batch
  * @param {*} req - request details
  * @param {*} res - response details
  * @returns - response details (with status)
@@ -90,7 +90,8 @@ const createExercises = async (req, res) => {
                 students.length * (chapter?.assignmentIds?.length || 0);
 
             // create a Job document so a background script can pick it up
-            const job = await Job.create({
+            const job = new Job({
+                uuid: crypto.randomUUID(),
                 type: "createExercises",
                 payload: {
                     chapterId,
@@ -101,10 +102,17 @@ const createExercises = async (req, res) => {
                 status: "pending",
             });
 
+            await job.save();
+
             // spawn a detached Node process to run the pregenerate script asynchronously
             try {
                 const nodeBin = process.execPath;
-                const scriptPath = path.join(__dirname, "..", "workers", "pregenerateExercises.js");
+                const scriptPath = path.join(
+                    __dirname,
+                    "..",
+                    "workers",
+                    "pregenerateExercises.js"
+                );
                 const child = spawn(nodeBin, [scriptPath, job._id.toString()], {
                     detached: true,
                     stdio: "ignore",
@@ -112,14 +120,18 @@ const createExercises = async (req, res) => {
                 // allow the child to continue running after this process exits
                 child.unref();
             } catch (spawnErr) {
-                console.error("Failed to spawn pregenerate script:", spawnErr.message);
+                console.error(
+                    "Failed to spawn pregenerate script:",
+                    spawnErr.message
+                );
                 // do not fail the HTTP request — job will remain pending and can be processed later
             }
 
             return res.status(202).json({
                 jobId: job._id,
-                statusUrl: `/jobs/${job._id}`,
-                message: "Exercise creation requested. Processing in background.",
+                statusUrl: `/jobs/${job.uuid}`,
+                message:
+                    "Exercise creation requested. Processing in background.",
             });
         } else {
             return res.status(400).send({ message: "Chapter ID not found." });
@@ -130,74 +142,6 @@ const createExercises = async (req, res) => {
             message: "Error when queuing exercises creation.",
             error: err.message,
         });
-    }
-};
-
-/**
- * Returns status for a queued job
- */
-const getJobStatus = async (req, res) => {
-    const jobId = req.params?.id;
-    try {
-        if (!jobId) return res.status(400).send({ message: "Missing Job ID." });
-
-        const job = await Job.findById(jobId).lean();
-        if (!job) return res.status(404).send({ message: "Job not found." });
-
-        return res.status(200).json({
-            id: job._id,
-            type: job.type,
-            payload: job.payload,
-            status: job.status,
-            progress: job.progress || 0,
-            totalTasks: job.totalTasks || 0,
-            completedTasks: job.completedTasks || 0,
-            failedReason: job.failedReason || null,
-            result: job.result || null,
-            createdAt: job.createdAt,
-            updatedAt: job.updatedAt,
-        });
-    } catch (err) {
-        console.error(err.message);
-        return res.status(500).send({
-            message: "Issue retrieving job status.",
-            error: err.message,
-        });
-    }
-};
-
-/**
- * Returns active job for a chapter (pending or in-progress)
- */
-const getJobByChapter = async (req, res) => {
-    const chapterId = req.params?.chapterId;
-    try {
-        if (!chapterId) return res.status(400).send({ message: "Missing Chapter ID." });
-
-        const job = await Job.findOne({
-            "payload.chapterId": chapterId,
-            status: { $in: ["pending", "in-progress"] },
-        })
-            .sort({ createdAt: -1 })
-            .lean();
-
-        if (!job) return res.status(404).send({ message: "No active job for chapter." });
-
-        return res.status(200).json({
-            id: job._id,
-            type: job.type,
-            payload: job.payload,
-            status: job.status,
-            progress: job.progress || 0,
-            totalTasks: job.totalTasks || 0,
-            completedTasks: job.completedTasks || 0,
-            failedReason: job.failedReason || null,
-            createdAt: job.createdAt,
-            updatedAt: job.updatedAt,
-        });
-    } catch (err) {
-        console.error(err.message);
-        return res.status(500).send({ message: "Issue retrieving job by chapter.", error: err.message });
     }
 };
 
@@ -349,27 +293,7 @@ const getAllExercises = async (req, res) => {
 
             for (let i = 0; i < exercise.questions.length; i++) {
                 const question = exercise.questions[i];
-                let availableAnswers = [
-                    question.correctAnswer,
-                    ...question.otherAnswers,
-                ]
-                    .map((value) => ({ value, sort: Math.random() }))
-                    .sort((a, b) => a.sort - b.sort)
-                    .map(({ value }) => value);
-
-                const filteredQuestion = {
-                    _id: question._id,
-                    uuid: question.uuid,
-                    query: question.query,
-                    type: question.type,
-                    hints: question.hints,
-                    topics: question.topics,
-                    explanation: question.explanation,
-                    availableAnswers,
-                    userAnswers: question.userAnswers,
-                    timeSpent: question.timeSpent,
-                    correct: question.correct,
-                };
+                const filteredQuestion = filterQuestion(question);
 
                 exercises[j].questions[i] = filteredQuestion;
             }
@@ -385,6 +309,12 @@ const getAllExercises = async (req, res) => {
     }
 };
 
+/**
+ * download all exercises in a csv format
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const downloadExercises = async (req, res) => {
     const { fields } = req.query;
 
@@ -413,6 +343,12 @@ const downloadExercises = async (req, res) => {
     }
 };
 
+/**
+ * get user ratings of a question in an exercise
+ * @param {*} req - request details
+ * @param {*} res - response details
+ * @returns - response details (with status)
+ */
 const submitRatings = async (req, res) => {
     const exerciseId = req.params?.id;
     const { questionId, ratings } = req.body;
@@ -827,6 +763,4 @@ module.exports = {
     getRecentActivity,
     submitRatings,
     getAverageScoreDistribution,
-    getJobStatus,
-    getJobByChapter,
 };

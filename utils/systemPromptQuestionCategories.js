@@ -6,10 +6,10 @@
  */
 
 const systemPromptQuestionCategories = (
-  minNumberOfQuestionsCategories = 3,
-  maxNumberOfQuestionsCategories = 6
+    minNumberOfQuestionsCategories = 3,
+    maxNumberOfQuestionsCategories = 6
 ) => {
-  return `
+    return `
 Your task is to analyze the provided student code, identify the core, generalizable programming constructs and patterns it contains, and then propose a set of unique, reusable, general-purpose question types that could test those constructs/patterns.
 
 Correctness: The code compiles and runs correctly. Do not assume any compilation or runtime or syntax errors.
@@ -80,5 +80,5 @@ Each object in the array must strictly follow this exact structure (with nothing
 };
 
 module.exports = {
-  systemPromptQuestionCategories,
+    systemPromptQuestionCategories,
 };
