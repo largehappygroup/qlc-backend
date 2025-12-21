@@ -4,10 +4,9 @@ const User = require("../models/User.js");
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 
-const { generateQuestions } = require("./questionGeneration.js");
 const { fetchStudentCode } = require("../utils/studentCode.js");
 const {
-  systemPromptQuestionCategories,
+    systemPromptQuestionCategories,
 } = require("../utils/systemPromptQuestionCategories");
 
 const {
@@ -71,16 +70,13 @@ const questionCategoriesGeneration = async (
  * @param {number} maxAPIRetries - the number of times the API is called incase of failure.
  */
 const questionGenerationFromQuestionCategories = async (
-    submissionIndex,
-    submission,
     systemPrompt,
+    userPrompt,
     questionCategory,
     maxAPIRetries
 ) => {
     let generatedQuestions = []; // storing all the generatedQuestions (only one for now; can be used to generate more).
     try {
-        const userPrompt = userPrompt(submission);
-        
         // Call the AI service. We assume it returns a ready-to-use array of objects.
         let questionsFromAI = await generateAIResponse(
             systemPrompt,
@@ -165,11 +161,16 @@ const generateExercise = async (userId, assignmentId) => {
 
         if (count <= 0) continue;
 
-        const systemPromptText = systemPromptSpecificQuestionCategory(qt, count);
+        const systemPromptText = systemPromptSpecificQuestionCategory(
+            qt,
+            count
+        );
         const userPromptText = await userPrompt(studentCode);
-        let questionsForType = await generateQuestions(
+        let questionsForType = await questionGenerationFromQuestionCategories(
             systemPromptText,
-            userPromptText
+            userPromptText,
+            qt,
+            3 // max retries
         );
 
         // Add additional fields to each question
