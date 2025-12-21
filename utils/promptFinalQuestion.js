@@ -6,7 +6,10 @@ const path = require("path");
  * @param {string} questionCategory - The category of question returned by the LLM, along with generation directives.
  * @returns {string} A detailed instruction string, formatted and ready to be sent to the AI.
  */
-const systemPromptSpecificQuestionCategory = (questionCategory, numberOfQuestions = 1) => {
+const systemPromptSpecificQuestionCategory = (
+    questionCategory,
+    numberOfQuestions = 1
+) => {
     // Maintaining a global generation directives based on experimental results.
     const globalGenerationDirectives = JSON.parse(
         fs.readFileSync(
@@ -20,7 +23,6 @@ const systemPromptSpecificQuestionCategory = (questionCategory, numberOfQuestion
     const incorrectAnswers = 3;
     const maxNumberOfHints = 3;
     const questionStructure = ["multiple-choice", "coding"][0]; // only dealing with MCQs at the moment
-    const numberOfQuestions = 1;
 
     return `
 Your primary task is to analyze the provided student code and generate questions related to the student's code.  
