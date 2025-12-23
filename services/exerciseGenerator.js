@@ -71,13 +71,15 @@ const questionCategoriesGeneration = async (
  * @param {number} maxAPIRetries - the number of times the API is called incase of failure.
  */
 const questionGenerationFromQuestionCategories = async (
+    submission,
     systemPrompt,
-    userPrompt,
     questionCategory,
     maxAPIRetries
 ) => {
     let generatedQuestions = []; // storing all the generatedQuestions (only one for now; can be used to generate more).
     try {
+        const userPrompt = userPrompt(submission);
+
         // Call the AI service. We assume it returns a ready-to-use array of objects.
         let questionsFromAI = await generateAIResponse(
             systemPrompt,
@@ -99,7 +101,7 @@ const questionGenerationFromQuestionCategories = async (
         if (questionsFromAI && Array.isArray(questionsFromAI)) {
             questionsFromAI.forEach((q) => {
                 generatedQuestions.push({
-                    studentCode: studentCode.trim(), // Add the student's code
+                    studentCode: submission.trim(), // Add the student's code
                     questionCategoryName: questionCategory.name,
                     questionCategoryDefinition: questionCategory.definition,
                     questionCategoryDirectives:
