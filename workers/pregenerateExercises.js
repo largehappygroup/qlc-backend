@@ -14,7 +14,7 @@ const { generateExercise } = require("../services/exerciseGenerator.js");
 async function run(jobId) {
     await connectDB();
 
-    const job = await Job.findById(jobId);
+    const job = await Job.findOne({ uuid: jobId }).lean();
     if (!job) {
         console.error(`Job ${jobId} not found`);
         process.exit(1);
