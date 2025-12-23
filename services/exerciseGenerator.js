@@ -115,12 +115,7 @@ const questionGenerationFromQuestionCategories = async (
         throw error;
     }
 
-    // Writing to CSV, only used for notion.
-    if (generatedQuestions.length > 0) {
-        writeToCSV(CSVFILENAME, generatedQuestions);
-    } else {
-        console.log("No questions were generated, skipping CSV export.");
-    }
+    return generatedQuestions;
 };
 
 /**
