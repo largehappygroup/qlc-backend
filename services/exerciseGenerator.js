@@ -65,7 +65,6 @@ const questionCategoriesGeneration = async (
 
 /**
  * Generates questions (one question as of now; can be used to generate more) based on system prompt and students' submission.
- * @param {number} submissionIndex - the index of the submission. managed externally to track the number of submissions processed.
  * @param {string} submission - student's submission.
  * @param {string} systemPrompt - systemPromptSpecificQuestionCategory is passed as the systemPrompt.
  * @param {JSON} questionCategory - a json object containing a questionCategory returned by AI.
@@ -100,7 +99,6 @@ const questionGenerationFromQuestionCategories = async (
         if (questionsFromAI && Array.isArray(questionsFromAI)) {
             questionsFromAI.forEach((q) => {
                 generatedQuestions.push({
-                    submissionIndex: submissionIndex,
                     studentCode: submission.trim(), // Add the student's code
                     questionCategoryName: questionCategory.name,
                     questionCategoryDefinition: questionCategory.definition,
@@ -112,7 +110,7 @@ const questionGenerationFromQuestionCategories = async (
         }
     } catch (error) {
         console.error(
-            `Failed to process submission #${submissionIndex}:`,
+            `Failed to process submission:`,
             error.message
         );
     }
