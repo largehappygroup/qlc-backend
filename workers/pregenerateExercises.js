@@ -62,6 +62,7 @@ async function run(jobId) {
             }
         } catch (err) {
             console.error(`Error processing task ${t.userId}/${t.assignmentId}:`, err.message);
+            throw err;
             completed += 1;
             job.progress = Math.round((completed / total) * 100);
             job.completedTasks = (job.completedTasks || 0) + 1;

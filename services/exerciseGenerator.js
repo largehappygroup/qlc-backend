@@ -99,7 +99,7 @@ const questionGenerationFromQuestionCategories = async (
         if (questionsFromAI && Array.isArray(questionsFromAI)) {
             questionsFromAI.forEach((q) => {
                 generatedQuestions.push({
-                    studentCode: submission.trim(), // Add the student's code
+                    studentCode: studentCode.trim(), // Add the student's code
                     questionCategoryName: questionCategory.name,
                     questionCategoryDefinition: questionCategory.definition,
                     questionCategoryDirectives:
