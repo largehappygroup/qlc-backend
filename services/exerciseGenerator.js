@@ -30,15 +30,12 @@ const questionCategoriesGeneration = async (
     maxAPIRetries
 ) => {
     let allGeneratedQuestionCategories = [];
-    const userPrompt = `
-            Student's code:
-            ${submission}
-  `;
+    const userPromptText = userPrompt(submission);
 
     // Call the AI service. We assume it returns a ready-to-use array of objects.
     const questionCategoriesFromAI = await generateAIResponse(
         systemPrompt,
-        userPrompt
+        userPromptText
     );
 
     let c = 0;
@@ -46,7 +43,7 @@ const questionCategoriesGeneration = async (
         console.log(`generating question categories again. c = ${c}`);
         questionCategoriesFromAI = await generateAIResponse(
             systemPrompt,
-            userPrompt
+            userPromptText
         );
         c++;
     }
@@ -78,12 +75,12 @@ const questionGenerationFromQuestionCategories = async (
 ) => {
     let generatedQuestions = []; // storing all the generatedQuestions (only one for now; can be used to generate more).
     try {
-        const userPrompt = userPrompt(submission);
+        const userPromptText = userPrompt(submission);
 
         // Call the AI service. We assume it returns a ready-to-use array of objects.
         let questionsFromAI = await generateAIResponse(
             systemPrompt,
-            userPrompt
+            userPromptText,
         );
 
         // simple loop to try generation maxAPIRetries times incase of failure.
@@ -92,7 +89,7 @@ const questionGenerationFromQuestionCategories = async (
             console.log(`generating questions again. c = ${c}`);
             questionsFromAI = await generateAIResponse(
                 systemPrompt,
-                userPrompt
+                userPromptText
             );
             c++;
         }
