@@ -15,6 +15,8 @@ const {
 } = require("../utils/promptFinalQuestion.js");
 const { findSubmission } = require("../utils/exerciseHelpers.js");
 
+const { generateAIResponse } = require("../services/responseGeneration.js");
+
 const { ObjectId } = mongoose.Types;
 
 /**
