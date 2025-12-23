@@ -13,7 +13,7 @@ const { generateExercise } = require("../services/exerciseGenerator.js");
 
 async function run(jobId) {
     await connectDB();
-
+    
     const job = await Job.findOne({ uuid: jobId }).lean();
     if (!job) {
         console.error(`Job ${jobId} not found`);
@@ -26,7 +26,7 @@ async function run(jobId) {
 
     const chapterId = job.payload?.chapterId;
     const students = await User.find({ role: "student" }, { _id: 0, vuNetId: 1 });
-    const chapter = await Chapter.findOne({ uuid: chapterId }, { _id: 0 }).lean();
+    const chapter = await Chapter.findOne({ uuid: chapterId }, { _id: 0 });
     const assignments = chapter?.assignmentIds || [];
 
     const tasks = [];
