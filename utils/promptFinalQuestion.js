@@ -50,7 +50,7 @@ Your response must be a valid JSON array containing ${numberOfQuestions} questio
 Each object in the array must strictly follow this exact structure (with nothing before or after):
 [
   {
-      "questionText": "String",
+      "query": "String",
       "correctAnswer": "String",
       "otherAnswers": ["List of ${incorrectAnswers} Strings"],
       "explanation": "String",
