@@ -113,7 +113,7 @@ const createExercises = async (req, res) => {
                     "workers",
                     "pregenerateExercises.js"
                 );
-                const child = spawn(nodeBin, [scriptPath, job._id.toString()], {
+                const child = spawn(nodeBin, [scriptPath, job.uuid.toString()], {
                     detached: true,
                     stdio: "ignore",
                 });
