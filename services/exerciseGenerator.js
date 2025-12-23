@@ -113,6 +113,7 @@ const questionGenerationFromQuestionCategories = async (
             `Failed to process submission:`,
             error.message
         );
+        throw error;
     }
 
     // Writing to CSV, only used for notion.
