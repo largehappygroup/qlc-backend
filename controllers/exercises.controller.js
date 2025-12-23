@@ -118,9 +118,9 @@ const createExercises = async (req, res) => {
                     scriptPath,
                     "--name",
                     `pregenerate-${job.uuid}`,
+                    "--no-autorestart",
                     "--",
                     job.uuid.toString(),
-                    "--no-autorestart",
                 ];
                 const child = spawn("pm2", pm2Args, {
                     detached: false,
