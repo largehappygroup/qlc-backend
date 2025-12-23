@@ -128,7 +128,7 @@ const createExercises = async (req, res) => {
             }
 
             return res.status(202).json({
-                jobId: job._id,
+                jobId: job.uuid,
                 statusUrl: `/jobs/${job.uuid}`,
                 message:
                     "Exercise creation requested. Processing in background.",
