@@ -8,11 +8,11 @@ const getJobStatus = async (req, res) => {
     try {
         if (!jobId) return res.status(400).send({ message: "Missing Job ID." });
 
-        const job = await Job.findById(jobId).lean();
+        const job = await Job.findOne({ uuid: jobId }).lean();
         if (!job) return res.status(404).send({ message: "Job not found." });
 
         return res.status(200).json({
-            id: job._id,
+            uuid: job.uuid,
             type: job.type,
             payload: job.payload,
             status: job.status,
@@ -20,7 +20,6 @@ const getJobStatus = async (req, res) => {
             totalTasks: job.totalTasks || 0,
             completedTasks: job.completedTasks || 0,
             failedReason: job.failedReason || null,
-            result: job.result || null,
             createdAt: job.createdAt,
             updatedAt: job.updatedAt,
         });
@@ -39,7 +38,8 @@ const getJobStatus = async (req, res) => {
 const getJobByChapter = async (req, res) => {
     const chapterId = req.params?.chapterId;
     try {
-        if (!chapterId) return res.status(400).send({ message: "Missing Chapter ID." });
+        if (!chapterId)
+            return res.status(400).send({ message: "Missing Chapter ID." });
 
         const job = await Job.findOne({
             "payload.chapterId": chapterId,
@@ -48,10 +48,13 @@ const getJobByChapter = async (req, res) => {
             .sort({ createdAt: -1 })
             .lean();
 
-        if (!job) return res.status(404).send({ message: "No active job for chapter." });
+        if (!job)
+            return res
+                .status(404)
+                .send({ message: "No active job for chapter." });
 
         return res.status(200).json({
-            id: job._id,
+            uuid: job.uuid,
             type: job.type,
             payload: job.payload,
             status: job.status,
@@ -64,7 +67,12 @@ const getJobByChapter = async (req, res) => {
         });
     } catch (err) {
         console.error(err.message);
-        return res.status(500).send({ message: "Issue retrieving job by chapter.", error: err.message });
+        return res
+            .status(500)
+            .send({
+                message: "Issue retrieving job by chapter.",
+                error: err.message,
+            });
     }
 };
 

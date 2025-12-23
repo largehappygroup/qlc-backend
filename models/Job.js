@@ -21,7 +21,8 @@ const JobSchema = new mongoose.Schema(
         completedTasks: { type: Number, default: 0 }, // number of completed tasks
         failedReason: { type: String, default: null }, // reason for failure if status is 'failed'
         attempts: { type: Number, default: 0 },
-        lockedAt: { type: Date },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now },
     },
     { timestamps: true }
 );
