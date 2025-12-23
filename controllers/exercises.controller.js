@@ -106,18 +106,27 @@ const createExercises = async (req, res) => {
 
             // spawn a detached Node process to run the pregenerate script asynchronously
             try {
-                const nodeBin = process.execPath;
                 const scriptPath = path.join(
                     __dirname,
                     "..",
                     "workers",
                     "pregenerateExercises.js"
                 );
-                const child = spawn(nodeBin, [scriptPath, job.uuid.toString()], {
-                    detached: true,
-                    stdio: "ignore",
+                // Use pm2 to start the script with logs and no auto-restart
+                const pm2Args = [
+                    "start",
+                    scriptPath,
+                    "--name",
+                    `pregenerate-${job.uuid}`,
+                    "--",
+                    job.uuid.toString(),
+                    "--no-autorestart",
+                ];
+                const child = spawn("pm2", pm2Args, {
+                    detached: false,
+                    stdio: "inherit",
                 });
-                // allow the child to continue running after this process exits
+                // No unref, keep attached for log visibility
                 child.unref();
             } catch (spawnErr) {
                 console.error(
