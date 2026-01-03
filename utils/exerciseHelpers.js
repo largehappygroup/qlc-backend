@@ -38,14 +38,19 @@ const filterQuestion = (question) => {
 const findSubmission = async (user, assignment) => {
     let author;
     // study group A is self, study group B is others
-    if (!user.studyParticipation || user.studyGroup === "A") {
+    if (user.studyGroup === "A") {
         author = user;
         const hasSubmission = await doesSubmissionFolderExist(
             assignment.identifier,
             user.email
         );
 
-        if (!hasSubmission) {
+        const validStudentScore = await checkStudentScore(
+            assignment.identifier,
+            user.email
+        );
+
+        if (!hasSubmission || !validStudentScore) {
             const usersInStudy = await User.find(
                 {
                     studyParticipation: true,
@@ -65,7 +70,12 @@ const findSubmission = async (user, assignment) => {
                     assignment.identifier,
                     candidate.email
                 );
-                if (hasSubmission) {
+
+                const validStudentScore = await checkStudentScore(
+                    assignment.identifier,
+                    candidate.email
+                );
+                if (hasSubmission && validStudentScore) {
                     author = candidate;
                     break;
                 }
@@ -86,7 +96,11 @@ const findSubmission = async (user, assignment) => {
                 assignment.identifier,
                 candidate.email
             );
-            if (hasSubmission) {
+            const validStudentScore = await checkStudentScore(
+                assignment.identifier,
+                candidate.email
+            );
+            if (hasSubmission && validStudentScore) {
                 author = candidate;
                 break;
             }
@@ -98,7 +112,11 @@ const findSubmission = async (user, assignment) => {
                 assignment.identifier,
                 user.email
             );
-            if (hasSubmission) {
+            const validStudentScore = await checkStudentScore(
+                assignment.identifier,
+                user.email
+            );
+            if (hasSubmission && validStudentScore) {
                 author = user;
             }
         }

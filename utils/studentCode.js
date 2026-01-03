@@ -177,8 +177,49 @@ const doesSubmissionFolderExist = async (assignmentIdentifier, studentEmail) => 
     }
 };
 
+const checkStudentScore = async (assignmentIdentifier, studentEmail) => {
+    try {
+        const submissionsDir = path.join(
+            __dirname,
+            "../..",
+            "assignment-submissions",
+            assignmentIdentifier
+        );
+        const files = await fs.promises.readdir(submissionsDir);
+        const csvFile = files.find(f => f.toLowerCase().endsWith('.csv'));
+        if (!csvFile) return false;
+        const csvPath = path.join(submissionsDir, csvFile);
+        const data = await fs.promises.readFile(csvPath, "utf8");
+        const lines = data.split(/\r?\n/).filter(Boolean);
+        if (lines.length < 2) return false; // no data
+
+        // Parse header
+        const headers = lines[0].split(",").map(h => h.trim());
+        const usernameIdx = headers.findIndex(h => h.toLowerCase() === "username");
+        const totalIdx = headers.findIndex(h => h.toLowerCase() === "correctness total");
+        const possibleIdx = headers.findIndex(h => h.toLowerCase() === "correctness total possible");
+        if (usernameIdx === -1 || totalIdx === -1 || possibleIdx === -1) return false;
+
+        // Find student row
+        for (let i = 1; i < lines.length; i++) {
+            const row = lines[i].split(",").map(cell => cell.trim());
+            if (row[usernameIdx] === studentEmail) {
+                const total = parseFloat(row[totalIdx]);
+                const possible = parseFloat(row[possibleIdx]);
+                if (isNaN(total) || isNaN(possible) || possible === 0) return false;
+                const percent = (total / possible) * 100;
+                return percent >= 75;
+            }
+        }
+        return false; // student not found
+    } catch (err) {
+        return false;
+    }
+}
+
 module.exports = {
     fetchStudentCode,
     getStudentJavaFiles,
     doesSubmissionFolderExist,
+    checkStudentScore,
 };

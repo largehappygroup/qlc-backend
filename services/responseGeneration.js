@@ -37,15 +37,24 @@ function buildApiPayload(systemPrompt, userPrompt) {
  */
 function parseAIResponse(responseData) {
     try {
-        return JSON.parse(responseData);
+      // Remove code fences if present (``` or ```json)
+      let cleaned = responseData;
+      if (typeof cleaned === 'string') {
+        cleaned = cleaned.trim();
+        // Remove leading code fence
+        cleaned = cleaned.replace(/^```(?:json)?\s*/i, '');
+        // Remove trailing code fence
+        cleaned = cleaned.replace(/\s*```\s*$/, '');
+      }
+      return JSON.parse(cleaned);
     } catch (error) {
-        console.error(
-            "JSON formatting not correct. Either some weird formatting in the AI response, or it may have been cut off by max_tokens."
-        );
-        console.error("Received data:", responseData);
-        return undefined; // Explicitly return undefined on failure
+      console.error(
+        "JSON formatting not correct. Either some weird formatting in the AI response, or it may have been cut off by max_tokens."
+      );
+      console.error("Received data:", responseData);
+      return undefined; // Explicitly return undefined on failure
     }
-}
+  }
 
 /**
  * Calls Amplify API to generate a response based on system and user prompts.
