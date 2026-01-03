@@ -193,6 +193,7 @@ const generateExercise = async (userId, assignmentId) => {
         totalCorrect: 0,
         completedQuestions: 0,
         studentCode: studentCode,
+        createdTimestamp: new Date(),
     });
     return exercise;
 };

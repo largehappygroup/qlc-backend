@@ -3,7 +3,7 @@ const router = express.Router({ mergeParams: true });
 const { authenticate } = require("../middleware/auth.js");
 
 const {
-    createExercise,
+    regenerateExercise,
     createExercises,
     deleteExercise,
     editExercise,
@@ -18,7 +18,7 @@ const {
     getAverageScoreDistribution,
 } = require("../controllers/exercises.controller.js");
 
-router.post("/", authenticate, createExercise);
+router.post("/regenerate", authenticate, regenerateExercise);
 router.post("/batch", authenticate, createExercises);
 router.put("/:id/ratings", authenticate, submitRatings);
 router.put("/:id", authenticate, editExercise);

@@ -71,6 +71,10 @@ const ExerciseSchema = new Schema({
         required: true,
         unique: true,
     },
+    createdTimestamp: {
+        type: Date, // when the exercise was created
+        required: true,
+    },
     userId: {
         type: String, // vunetid for the user answering questions
         ref: "User",

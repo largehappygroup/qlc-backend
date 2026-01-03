@@ -23,26 +23,10 @@ const { generateExercise } = require("../services/exerciseGenerator.js");
  * @param {*} res - response details
  * @returns - {exercise: created exercise details, studentCode: code associated with the exercise}
  */
-const createExercise = async (req, res) => {
+const regenerateExercise = async (req, res) => {
     const { userId, assignmentId } = req.query;
     try {
         if (userId && assignmentId) {
-            const search = await Exercise.findOne(
-                {
-                    userId,
-                    assignmentId,
-                },
-                { _id: 0 }
-            ).lean();
-
-            if (search) {
-                for (let i = 0; i < search.questions.length; i++) {
-                    const question = search.questions[i];
-                    search.questions[i] = filterQuestion(question);
-                }
-
-                return res.status(201).json({ exercise: search });
-            }
             const exercise = await generateExercise(userId, assignmentId);
             await exercise.save();
             const returnExercise = exercise.toObject();
@@ -230,12 +214,22 @@ const getExercise = async (req, res) => {
     const id = req.params?.id;
     try {
         if (id) {
-            const exercise = await Exercise.findOne(
+            // Find all exercises with this uuid (should be one, but just in case)
+            const exercises = await Exercise.find(
                 { uuid: id },
                 { _id: 0 }
             ).lean();
-            if (!exercise) {
+            if (!exercises || exercises.length === 0) {
                 return res.status(404).send({ message: "Exercise not found." });
+            }
+            // Pick the one with the most recent createdTimestamp
+            let exercise = exercises[0];
+            if (exercises.length > 1) {
+                exercise = exercises.reduce((latest, curr) => {
+                    const latestTime = latest.createdTimestamp ? new Date(latest.createdTimestamp).getTime() : 0;
+                    const currTime = curr.createdTimestamp ? new Date(curr.createdTimestamp).getTime() : 0;
+                    return currTime > latestTime ? curr : latest;
+                }, exercises[0]);
             }
 
             for (let i = 0; i < exercise.questions.length; i++) {
@@ -759,7 +753,7 @@ const getRecentActivity = async (req, res) => {
 };
 
 module.exports = {
-    createExercise,
+    regenerateExercise,
     createExercises,
     deleteExercise,
     editExercise,
