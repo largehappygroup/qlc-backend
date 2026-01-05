@@ -15,13 +15,13 @@ const path = require("path");
 const crypto = require("crypto");
 
 const { filterQuestion } = require("../utils/exerciseHelpers.js");
-const { generateExercise } = require("../services/exerciseGenerator.js");
+const { generateExercise } = require("../services/exerciseGeneraton.js");
 
 /**
  * Creates a single, new exercise with AI. post /exercises
  * @param {*} req - request details
  * @param {*} res - response details
- * @returns - {exercise: created exercise details, studentCode: code associated with the exercise}
+ * @returns - {exercise: created exercise details}
  */
 const regenerateExercise = async (req, res) => {
     const { userId, assignmentId } = req.query;
@@ -226,8 +226,12 @@ const getExercise = async (req, res) => {
             let exercise = exercises[0];
             if (exercises.length > 1) {
                 exercise = exercises.reduce((latest, curr) => {
-                    const latestTime = latest.createdTimestamp ? new Date(latest.createdTimestamp).getTime() : 0;
-                    const currTime = curr.createdTimestamp ? new Date(curr.createdTimestamp).getTime() : 0;
+                    const latestTime = latest.createdTimestamp
+                        ? new Date(latest.createdTimestamp).getTime()
+                        : 0;
+                    const currTime = curr.createdTimestamp
+                        ? new Date(curr.createdTimestamp).getTime()
+                        : 0;
                     return currTime > latestTime ? curr : latest;
                 }, exercises[0]);
             }

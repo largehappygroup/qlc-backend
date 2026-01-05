@@ -4,18 +4,15 @@ const User = require("../models/User.js");
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 
-const { fetchStudentCode } = require("../utils/studentCode.js");
-const {
-    systemPromptQuestionCategories,
-} = require("../utils/systemPromptQuestionCategories");
-
+const { getSubmission } = require("../utils/studentSubmission.js");
 const {
     systemPromptSpecificQuestionCategory,
     userPrompt,
-} = require("../utils/promptFinalQuestion.js");
-const { findSubmission } = require("../utils/exerciseHelpers.js");
+    systemPromptQuestionCategories
+} = require("../utils/prompts.js");
+const { findAuthor } = require("../utils/exerciseHelpers.js");
 
-const { generateAIResponse } = require("../services/responseGeneration.js");
+const { generateAIResponse } = require("./responseGeneration.js");
 
 const { ObjectId } = mongoose.Types;
 
@@ -23,7 +20,8 @@ const { ObjectId } = mongoose.Types;
  * Generates question categories based on system prompt and students' submission.
  * @param {string} submission - student's submission.
  * @param {string} systemPrompt - systemPromptQuestionCategories is passed as the systemPrompt.
- */
+ * @returns - array 
+*/
 const questionCategoriesGeneration = async (
     submission,
     systemPrompt,
@@ -98,7 +96,7 @@ const questionGenerationFromQuestionCategories = async (
         if (questionsFromAI && Array.isArray(questionsFromAI)) {
             questionsFromAI.forEach((q) => {
                 generatedQuestions.push({
-                    studentCode: submission.trim(), // Add the student's code
+                    submission: submission.trim(), // Add the student's code
                     questionCategoryName: questionCategory.name,
                     questionCategoryDefinition: questionCategory.definition,
                     questionCategoryDirectives:
@@ -130,15 +128,15 @@ const generateExercise = async (userId, assignmentId) => {
         { uuid: assignmentId },
         { _id: 0 }
     );
-    const author = await findSubmission(user, assignment);
+    const author = await findAuthor(user, assignment);
 
-    const studentCode = await fetchStudentCode(
+    const submission = await getSubmission(
         author.email,
         assignment.identifier
     );
 
     const questionCategories = await questionCategoriesGeneration(
-        studentCode,
+        submission,
         systemPromptQuestionCategories(3, 6),
         3 // max retries
     );
@@ -160,7 +158,7 @@ const generateExercise = async (userId, assignmentId) => {
             qt,
             count
         );
-        const userPromptText = await userPrompt(studentCode);
+        const userPromptText = await userPrompt(submission);
         let questionsForType = await questionGenerationFromQuestionCategories(
             systemPromptText,
             userPromptText,
@@ -192,7 +190,7 @@ const generateExercise = async (userId, assignmentId) => {
         totalTimeSpent: 0,
         totalCorrect: 0,
         completedQuestions: 0,
-        studentCode: studentCode,
+        submission,
         createdTimestamp: new Date(),
     });
     return exercise;

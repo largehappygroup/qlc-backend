@@ -1,6 +1,6 @@
-// Used for exercise.controllers.js 
+// Used for exercise.controllers.js
 const User = require("../models/User.js");
-const { doesSubmissionFolderExist } = require("./studentCode.js");
+const { doesSubmissionFolderExist } = require("./studentSubmission.js");
 
 /**
  * shuffles the available answers and filters out sensitive information from a question object.
@@ -30,77 +30,65 @@ const filterQuestion = (question) => {
 };
 
 /**
+ * checks that the submission exists for the user and it met the score threshold
+ * @param {*} author - mongoose user object for potential candidate
+ * @param {*} assignment - mongoose assignment object with details
+ * @returns - boolean, true if we can use the submission
+ */
+const validSubmission = async (author, assignment) => {
+    const hasSubmission = await doesSubmissionFolderExist(
+        assignment.identifier,
+        author.email
+    );
+
+    const validStudentScore = await checkStudentScore(
+        assignment.identifier,
+        author.email
+    );
+
+    return hasSubmission && validStudentScore;
+};
+
+const shuffleCandidates = (candidates) => {
+    const result = [...candidates];
+    for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+    return result;
+};
+
+/**
  * finds a suitable submission author for the given user and assignment.
  * @param {*} user - the user requesting the exercise
  * @param {*} assignment - the assignment for which to find a submission
  * @returns the author user object
  */
-const findSubmission = async (user, assignment) => {
+const findAuthor = async (user, assignment) => {
     let author;
+    const users = await User.find(
+        {
+            vuNetId: { $ne: user.vuNetId },
+        },
+        { _id: 0 }
+    );
+    const candidates = shuffleCandidates(users);
     // study group A is self, study group B is others
     if (user.studyGroup === "A") {
         author = user;
-        const hasSubmission = await doesSubmissionFolderExist(
-            assignment.identifier,
-            user.email
-        );
-
-        const validStudentScore = await checkStudentScore(
-            assignment.identifier,
-            user.email
-        );
-
-        if (!hasSubmission || !validStudentScore) {
-            const usersInStudy = await User.find(
-                {
-                    studyParticipation: true,
-                    vuNetId: { $ne: user.vuNetId },
-                },
-                { _id: 0 }
-            );
-            const candidates = [...usersInStudy];
-            for (let i = candidates.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-            }
-            // ...existing code...
-            // First, try to find a submission from other participants (random order)
+        if (!validSubmission(author, assignment)) {
+            // try to find a submission from other participants (random order)
             for (const candidate of candidates) {
-                const hasSubmission = await doesSubmissionFolderExist(
-                    assignment.identifier,
-                    candidate.email
-                );
-
-                const validStudentScore = await checkStudentScore(
-                    assignment.identifier,
-                    candidate.email
-                );
-                if (hasSubmission && validStudentScore) {
+                if (validSubmission(candidate, assignment)) {
                     author = candidate;
                     break;
                 }
             }
         }
     } else {
-        const usersInStudy = await User.find(
-            {
-                studyParticipation: true,
-                vuNetId: { $ne: user.vuNetId },
-            },
-            { _id: 0 }
-        );
-        const candidates = usersInStudy.sort(() => Math.random() - 0.5); // create a copy
         // First, try to find a submission from other participants (random order)
         for (const candidate of candidates) {
-            const hasSubmission = await doesSubmissionFolderExist(
-                assignment.identifier,
-                candidate.email
-            );
-            const validStudentScore = await checkStudentScore(
-                assignment.identifier,
-                candidate.email
-            );
-            if (hasSubmission && validStudentScore) {
+            if (validSubmission(candidate, assignment)) {
                 author = candidate;
                 break;
             }
@@ -108,15 +96,7 @@ const findSubmission = async (user, assignment) => {
 
         // If no other participant had a submission, finally try the current user as a fallback
         if (!author) {
-            const hasSubmission = await doesSubmissionFolderExist(
-                assignment.identifier,
-                user.email
-            );
-            const validStudentScore = await checkStudentScore(
-                assignment.identifier,
-                user.email
-            );
-            if (hasSubmission && validStudentScore) {
+            if (validSubmission(user, assignment)) {
                 author = user;
             }
         }
@@ -125,6 +105,6 @@ const findSubmission = async (user, assignment) => {
 };
 
 module.exports = {
-    findSubmission,
+    findAuthor,
     filterQuestion,
 };

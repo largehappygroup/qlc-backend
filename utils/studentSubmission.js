@@ -145,7 +145,7 @@ const getStudentJavaFiles = async (
  * @param {boolean} [options.recursive=false]
  * @returns {Promise<string>}
  */
-const fetchStudentCode = async (studentEmail, assignmentIdentifier, options = {}) => {
+const getSubmission= async (studentEmail, assignmentIdentifier, options = {}) => {
     const files = await getStudentJavaFiles(
         assignmentIdentifier,
         studentEmail,
@@ -218,7 +218,7 @@ const checkStudentScore = async (assignmentIdentifier, studentEmail) => {
 }
 
 module.exports = {
-    fetchStudentCode,
+    getSubmission,
     getStudentJavaFiles,
     doesSubmissionFolderExist,
     checkStudentScore,
