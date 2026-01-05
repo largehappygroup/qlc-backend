@@ -28,7 +28,7 @@ router.get("/average", authenticate, getAverageScore);
 router.get("/recent-activity", authenticate, getRecentActivity);
 router.get("/time-spent", authenticate, getAverageTimeSpent);
 router.get("/", authenticate, getAllExercises);
-router.get("/:id", authenticate, getExercise);
+router.get("/:assignmentId", authenticate, getExercise);
 router.delete("/:id", authenticate, deleteExercise);
 router.post("/:id/check", authenticate, checkQuestion);
 

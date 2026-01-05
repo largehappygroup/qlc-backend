@@ -205,18 +205,18 @@ const editExercise = async (req, res) => {
 };
 
 /**
- * Retrieves an exercise by ID.
+ * Retrieves an exercise by assignment ID.
  * @param {*} req - request details
  * @param {*} res - response details
  * @returns - response details (with status)
  */
 const getExercise = async (req, res) => {
-    const id = req.params?.id;
+    const assignmentId = req.params?.assignmentId;
     try {
-        if (id) {
-            // Find all exercises with this uuid (should be one, but just in case)
+        if (assignmentId) {
+            // Find all exercises with this assignmentId (should be one, but just in case)
             const exercises = await Exercise.find(
-                { uuid: id },
+                { assignmentId: assignmentId },
                 { _id: 0 }
             ).lean();
             if (!exercises || exercises.length === 0) {
@@ -243,7 +243,7 @@ const getExercise = async (req, res) => {
 
             return res.status(200).json(exercise);
         } else {
-            return res.status(400).send({ message: "Missing Exercise ID." });
+            return res.status(400).send({ message: "Missing Assignment ID." });
         }
     } catch (err) {
         console.error(err.message);
