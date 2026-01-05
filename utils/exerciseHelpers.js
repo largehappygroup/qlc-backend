@@ -49,6 +49,11 @@ const validSubmission = async (author, assignment) => {
     return hasSubmission && validStudentScore;
 };
 
+/**
+ * randomly shuffles an array of candidates
+ * @param {*} candidates 
+ * @returns 
+ */
 const shuffleCandidates = (candidates) => {
     const result = [...candidates];
     for (let i = candidates.length - 1; i > 0; i--) {

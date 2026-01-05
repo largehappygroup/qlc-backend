@@ -9,7 +9,7 @@ const Job = require("../models/Job.js");
 const Exercise = require("../models/Exercise.js");
 const User = require("../models/User.js");
 const Chapter = require("../models/Chapter.js");
-const { generateExercise } = require("../services/exerciseGenerator.js");
+const { generateExercise } = require("../services/exerciseGeneraton.js");
 
 async function run(jobId) {
     await connectDB();
