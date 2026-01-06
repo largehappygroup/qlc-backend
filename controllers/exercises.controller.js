@@ -15,7 +15,7 @@ const path = require("path");
 const crypto = require("crypto");
 
 const { filterQuestion } = require("../utils/exerciseHelpers.js");
-const { generateExercise } = require("../services/exerciseGeneraton.js");
+const { generateExercise } = require("../services/exerciseGeneration.js");
 
 /**
  * Creates a single, new exercise with AI. post /exercises
@@ -285,19 +285,35 @@ const getAllExercises = async (req, res) => {
             }
         }
 
-        const exercises = await Exercise.find(filter, { _id: 0 }).lean();
+        let exercises = await Exercise.find(filter, { _id: 0 }).lean();
+
+        // Map to store the most recent exercise for each userId-assignmentId pair
+        const uniqueMap = new Map();
+        for (const exercise of exercises) {
+            const key = `${exercise.userId}::${exercise.assignmentId}`;
+            if (!uniqueMap.has(key)) {
+                uniqueMap.set(key, exercise);
+            } else {
+                const existing = uniqueMap.get(key);
+                const existingTime = existing.createdTimestamp ? new Date(existing.createdTimestamp).getTime() : 0;
+                const currTime = exercise.createdTimestamp ? new Date(exercise.createdTimestamp).getTime() : 0;
+                if (currTime > existingTime) {
+                    uniqueMap.set(key, exercise);
+                }
+            }
+        }
+
+        // Only keep the most recent exercise for each userId-assignmentId pair
+        exercises = Array.from(uniqueMap.values());
 
         for (let j = 0; j < exercises.length; j++) {
             const exercise = exercises[j];
-
             for (let i = 0; i < exercise.questions.length; i++) {
                 const question = exercise.questions[i];
                 const filteredQuestion = filterQuestion(question);
-
                 exercises[j].questions[i] = filteredQuestion;
             }
         }
-        console.log(filter);
         return res.status(200).json(exercises);
     } catch (err) {
         console.error(err.message);

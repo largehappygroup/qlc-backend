@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true });
-const {authenticate} = require("../middleware/auth.js");
+const { authenticate, requireRole } = require("../middleware/auth.js");
 
 const {
     createAssignment,
@@ -10,9 +10,9 @@ const {
     getAssignment,
 } = require("../controllers/assignments.controller.js");
 
-router.post("/", authenticate, createAssignment);
-router.put("/:id", authenticate, editAssignment);
+router.post("/", authenticate, requireRole(["admin", "faculty"]), createAssignment);
+router.put("/:id", authenticate, requireRole(["admin", "faculty"]), editAssignment);
 router.get("/", authenticate, getAllAssignments);
 router.get("/:id", authenticate, getAssignment);
-router.delete("/:id", authenticate, deleteAssignment);
+router.delete("/:id", authenticate, requireRole(["admin", "faculty"]), deleteAssignment);
 module.exports = router;

@@ -14,6 +14,21 @@ const authenticate = (req, res, next) => {
     }
     next();
 };
+
+const requireRole = async (roles) => {
+    return async (req, res, next) => {
+        const vuNetId = req.headers["remote-user-vunetid"];
+        const user = await User.findOne({ vuNetId: vuNetId }, { role: 1, _id: 0 });
+        if (!user || !roles.includes(user.role)) {
+            return res
+                .status(403)
+                .send({ message: "Forbidden: Insufficient permissions." });
+        }
+        next();
+    }
+}
+
 module.exports = {
     authenticate,
+    requireRole
 };

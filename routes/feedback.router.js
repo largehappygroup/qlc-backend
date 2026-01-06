@@ -8,7 +8,7 @@ const {
 } = require("../controllers/feedback.controller.js");
 
 router.post("/", authenticate, createFeedback);
-router.get("/", authenticate, downloadFeedback);
+router.get("/", authenticate, requireRole(["admin", "faculty"]), downloadFeedback);
 router.get("/exists", authenticate, doesFeedbackExist);
 
 module.exports = router;

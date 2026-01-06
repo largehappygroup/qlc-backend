@@ -130,6 +130,13 @@ const generateExercise = async (userId, assignmentId) => {
     );
     const author = await findAuthor(user, assignment);
 
+    if (!author) {
+        // No valid author found, cannot proceed
+        throw new Error(
+            `No valid author with a qualifying submission found for assignment ${assignment?.identifier || assignmentId}. Cannot generate exercise.`
+        );
+    }
+
     const submission = await getSubmission(
         author.email,
         assignment.identifier
