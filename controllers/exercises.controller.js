@@ -18,10 +18,12 @@ const { filterQuestion } = require("../utils/exerciseHelpers.js");
 const { generateExercise } = require("../services/exerciseGeneration.js");
 
 /**
- * Creates a single, new exercise with AI. post /exercises
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - {exercise: created exercise details}
+ * Creates a single, new exercise for a user and assignment using AI generation.
+ * Validates userId and assignmentId, generates and saves the exercise, and filters questions for response.
+ * Responds with the created exercise details or an error if initialization fails.
+ * @param {Object} req - Express request object with userId and assignmentId in query.
+ * @param {Object} res - Express response object for sending exercise data or error message.
+ * @returns {Object} JSON response with created exercise details or error message.
  */
 const regenerateExercise = async (req, res) => {
     const { userId, assignmentId } = req.query;
@@ -49,10 +51,12 @@ const regenerateExercise = async (req, res) => {
 };
 
 /**
- * creates exercises for all students in a chapter post /exercises/batch
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Creates exercises for all students in a chapter in batch mode.
+ * Queues a background job for exercise creation and spawns a process to handle it asynchronously.
+ * Responds with job status and a message indicating background processing.
+ * @param {Object} req - Express request object with assignmentId in query.
+ * @param {Object} res - Express response object for sending job status or error message.
+ * @returns {Object} JSON response with job status and message or error.
  */
 const createExercises = async (req, res) => {
     const {assignmentId } = req.query;
@@ -131,10 +135,11 @@ const createExercises = async (req, res) => {
 };
 
 /**
- * Deletes an exercise from MongoDB by ID.
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Deletes an exercise from the database by its unique ID (uuid).
+ * Returns a success message if the exercise is deleted, or an error if not found or ID is missing.
+ * @param {Object} req - Express request object with exercise ID in params.
+ * @param {Object} res - Express response object for sending status messages.
+ * @returns {Object} JSON response with success or error message.
  */
 const deleteExercise = async (req, res) => {
     const id = req.params?.id;
@@ -164,10 +169,12 @@ const deleteExercise = async (req, res) => {
 };
 
 /**
- * Updates exercise by ID.
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Updates exercise details in the database by its uuid.
+ * Accepts updated exercise data in the request body and returns a success message.
+ * Responds with an error if the exercise is not found or ID is missing.
+ * @param {Object} req - Express request object with exercise ID in params and updated data in body.
+ * @param {Object} res - Express response object for sending status messages.
+ * @returns {Object} JSON response with success or error message.
  */
 const editExercise = async (req, res) => {
     const id = req.params?.id;
@@ -197,10 +204,12 @@ const editExercise = async (req, res) => {
 };
 
 /**
- * Retrieves an exercise by assignment ID.
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Retrieves the most recent exercise for a user and assignment by assignmentId and userId.
+ * Filters questions for response and returns the most recent exercise based on createdTimestamp.
+ * Responds with exercise data or an error if not found or parameters are missing.
+ * @param {Object} req - Express request object with assignmentId and userId in query.
+ * @param {Object} res - Express response object for sending exercise data or error message.
+ * @returns {Object} JSON response with exercise data or error message.
  */
 const getMostRecentExercise = async (req, res) => {
     const {assignmentId, userId} = req.query;
@@ -247,10 +256,12 @@ const getMostRecentExercise = async (req, res) => {
 };
 
 /**
- * Retrieves all exercises by filter.
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Retrieves all exercises matching filter criteria (userId, date, month, year, assignmentId).
+ * Returns only the most recent exercise for each unique userId-assignmentId pair.
+ * Filters questions for response and returns an array of exercises or error message.
+ * @param {Object} req - Express request object with filter parameters in query.
+ * @param {Object} res - Express response object for sending exercise data or error message.
+ * @returns {Array} JSON array of exercise objects or error message.
  */
 const getAllExercises = async (req, res) => {
     const { userId, date, month, year, assignmentId } = req.query;
@@ -325,10 +336,11 @@ const getAllExercises = async (req, res) => {
 };
 
 /**
- * download all exercises in a csv format
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Downloads all exercises as a CSV file, with specified fields and transformations.
+ * Uses json2csv to format exercise data and sends the CSV as an attachment in the response.
+ * @param {Object} req - Express request object with fields in query.
+ * @param {Object} res - Express response object for sending the CSV file or error status.
+ * @returns {String} CSV file containing exercise data or error message.
  */
 const downloadExercises = async (req, res) => {
     const { fields } = req.query;
@@ -359,10 +371,12 @@ const downloadExercises = async (req, res) => {
 };
 
 /**
- * get user ratings of a question in an exercise
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Submits user ratings for a specific question in an exercise.
+ * Updates the ratings for the question and saves the exercise.
+ * Responds with a success message or error if the exercise or question is not found.
+ * @param {Object} req - Express request object with exercise ID in params and ratings in body.
+ * @param {Object} res - Express response object for sending status messages.
+ * @returns {Object} JSON response with success or error message.
  */
 const submitRatings = async (req, res) => {
     const exerciseId = req.params?.id;
@@ -404,10 +418,12 @@ const submitRatings = async (req, res) => {
 };
 
 /**
- * checks the user's answer for a question in an exercise
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Checks the user's answer for a specific question in an exercise.
+ * Updates completion status, correctness, and time spent, and saves the exercise.
+ * Responds with the result (correct/incorrect) or error if the exercise or question is not found.
+ * @param {Object} req - Express request object with exercise ID in params and answer data in body.
+ * @param {Object} res - Express response object for sending result or error message.
+ * @returns {Object} JSON response with result or error message.
  */
 const checkQuestion = async (req, res) => {
     const id = req.params?.id; // exercise id
@@ -478,10 +494,11 @@ const checkQuestion = async (req, res) => {
 };
 
 /**
- * gets the average score for all completed exercises, optionally filtered by userId
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Calculates the average score for all completed exercises, optionally filtered by userId.
+ * Returns the average score as a rounded integer or 0 if no exercises are found.
+ * @param {Object} req - Express request object with optional userId in query.
+ * @param {Object} res - Express response object for sending average score or error message.
+ * @returns {Number} JSON response with average score or error message.
  */
 const getAverageScore = async (req, res) => {
     const { userId } = req.query;
@@ -513,10 +530,11 @@ const getAverageScore = async (req, res) => {
 };
 
 /**
- * gets the average time spent on all completed exercises, optionally filtered by userId
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Calculates the average time spent on all completed exercises, optionally filtered by userId.
+ * Returns the average time spent in HH:MM:SS format or 0 if no exercises are found.
+ * @param {Object} req - Express request object with optional userId in query.
+ * @param {Object} res - Express response object for sending average time or error message.
+ * @returns {String|Number} JSON response with formatted time or error message.
  */
 const getAverageTimeSpent = async (req, res) => {
     const { userId } = req.query;
@@ -554,10 +572,11 @@ const getAverageTimeSpent = async (req, res) => {
 };
 
 /**
- * Gets the distribution of average scores across all students or a specific student if userId is provided
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Gets the distribution of average scores across all students or a specific student if userId is provided.
+ * Returns an array of score ranges with counts and colors for visualization.
+ * @param {Object} req - Express request object with optional userId in query.
+ * @param {Object} res - Express response object for sending score distribution or error message.
+ * @returns {Array} JSON array of score distribution objects or error message.
  */
 const getAverageScoreDistribution = async (req, res) => {
     const { userId } = req.query;
@@ -673,10 +692,11 @@ const getAverageScoreDistribution = async (req, res) => {
 };
 
 /**
- * gets recent activity, optionally filtered by userId
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Retrieves recent activity for completed exercises, optionally filtered by userId.
+ * Returns an array of recent exercise completions with user, assignment, timestamp, and score details.
+ * @param {Object} req - Express request object with optional userId in query.
+ * @param {Object} res - Express response object for sending activity data or error message.
+ * @returns {Array} JSON array of recent activity objects or error message.
  */
 const getRecentActivity = async (req, res) => {
     const { userId } = req.query;

@@ -4,10 +4,13 @@ const crypto = require("crypto");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 /**
- * Initializes a chapter for a course
- * @param {*} req - request object, requires chapter details in body
- * @param {*} res - response object
- * @returns - response object with created chapter
+ * Creates a new chapter for a course with specified details and assignments.
+ * Validates required fields, assigns chapter order, and saves the chapter to the database.
+ * Optionally links assignments to the chapter if provided.
+ * Responds with the created chapter object or an error if validation fails.
+ * @param {Object} req - Express request object containing chapter details in body.
+ * @param {Object} res - Express response object for sending chapter data or error status.
+ * @returns {Object} JSON response with chapter data or error message.
  */
 const createChapter = async (req, res) => {
     const {
@@ -63,10 +66,12 @@ const createChapter = async (req, res) => {
 };
 
 /**
- * Deletes a chapter permanently
- * @param {*} req - request object
- * @param {*} res - response object
- * @returns - response object with updated status
+ * Deletes a chapter from the database by its unique ID (uuid).
+ * Also deletes associated assignments and updates the order of remaining chapters.
+ * Returns a success message if the chapter is deleted, or an error if not found or ID is missing.
+ * @param {Object} req - Express request object with chapter ID in params.
+ * @param {Object} res - Express response object for sending status messages.
+ * @returns {Object} JSON response with success or error message.
  */
 const deleteChapter = async (req, res) => {
     const id = req.params?.id;
@@ -122,10 +127,13 @@ const deleteChapter = async (req, res) => {
 };
 
 /**
- * Updates a chapter
- * @param {*} req - request object
- * @param {*} res - response object
- * @returns - response object with updated status
+ * Updates chapter details in the database by its uuid.
+ * Accepts updated chapter data and assignments in the request body and returns the updated chapter object.
+ * Handles assignment addition, deletion, and updates as needed.
+ * Responds with an error if the chapter is not found or ID is missing.
+ * @param {Object} req - Express request object with chapter ID in params and updated data in body.
+ * @param {Object} res - Express response object for sending updated chapter data or error status.
+ * @returns {Object} JSON response with updated chapter data or error message.
  */
 const editChapter = async (req, res) => {
     const id = req.params?.id;
@@ -214,10 +222,12 @@ const editChapter = async (req, res) => {
 };
 
 /**
- * Updates multiple chapters
- * @param {*} req - request object
- * @param {*} res - response object
- * @returns - response object with updated status
+ * Updates multiple chapters in the database.
+ * Accepts an array of chapters in the request body and updates each chapter accordingly.
+ * Returns a success message or an error if the chapters array is missing or update fails.
+ * @param {Object} req - Express request object containing chapters array in body.
+ * @param {Object} res - Express response object for sending status messages.
+ * @returns {Object} JSON response with success or error message.
  */
 const editAllChapters = async (req, res) => {
     const { chapters } = req.body;
@@ -245,10 +255,11 @@ const editAllChapters = async (req, res) => {
 };
 
 /**
- * Retrieves a chapter by ID.
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Retrieves a chapter from the database by its uuid.
+ * Returns the chapter object if found, or an error if not found or ID is missing.
+ * @param {Object} req - Express request object with chapter ID in params.
+ * @param {Object} res - Express response object for sending chapter data or error status.
+ * @returns {Object} JSON response with chapter data or error message.
  */
 const getChapter = async (req, res) => {
     const id = req.params?.id;
@@ -272,10 +283,11 @@ const getChapter = async (req, res) => {
 };
 
 /**
- * Retrieves all chapters
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Retrieves all chapters from the database, optionally filtered by order or release date.
+ * Returns an array of chapter objects sorted by order, or an error message if retrieval fails.
+ * @param {Object} req - Express request object with optional order and date query parameters.
+ * @param {Object} res - Express response object for sending chapter data or error status.
+ * @returns {Array} JSON array of chapter objects or error message.
  */
 const getAllChapters = async (req, res) => {
     const { order, date } = req.query;

@@ -9,10 +9,13 @@ const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 
 /**
- * Creates a new user (registration)
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Registers a new user in the system or returns an existing user if already registered.
+ * Extracts user details from request headers (from VUSSO authentication) and assigns a random study group.
+ * Ensures all required fields are present before saving the user to the database.
+ * Responds with the user object or an error message if required fields are missing.
+ * @param {Object} req - Express request object containing user details in headers and role in body.
+ * @param {Object} res - Express response object for sending user data or error status.
+ * @returns {Object} JSON response with user data or error message.
  */
 const createUser = async (req, res) => {
     try {
@@ -54,10 +57,11 @@ const createUser = async (req, res) => {
 };
 
 /**
- * Deletes a user by ID in MongoDB
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details
+ * Deletes a user from the database by their unique ID (uuid).
+ * Returns a success message if the user is deleted, or an error if not found or ID is missing.
+ * @param {Object} req - Express request object with user ID in params.
+ * @param {Object} res - Express response object for sending status messages.
+ * @returns {Object} JSON response with success or error message.
  */
 const deleteUser = async (req, res) => {
     const id = req.params?.id;
@@ -83,10 +87,12 @@ const deleteUser = async (req, res) => {
 };
 
 /**
- * Edits a user by ID.
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details
+ * Updates user details in the database by their vuNetId.
+ * Accepts updated user data in the request body and returns the updated user object.
+ * Responds with an error if the user is not found or ID is missing.
+ * @param {Object} req - Express request object with user ID in params and updated data in body.
+ * @param {Object} res - Express response object for sending updated user data or error status.
+ * @returns {Object} JSON response with updated user data or error message.
  */
 const editUser = async (req, res) => {
     const id = req.params?.id;
@@ -111,10 +117,11 @@ const editUser = async (req, res) => {
 };
 
 /**
- * Retrieves a user by ID.
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Retrieves a user from the database by their vuNetId.
+ * Returns the user object if found, or an error if not found or ID is missing.
+ * @param {Object} req - Express request object with user ID in params.
+ * @param {Object} res - Express response object for sending user data or error status.
+ * @returns {Object} JSON response with user data or error message.
  */
 const getUser = async (req, res) => {
     const id = req.params?.id;
@@ -138,10 +145,12 @@ const getUser = async (req, res) => {
 };
 
 /**
- * Retrieves all users by filter.
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Retrieves all users from the database, optionally filtered by role.
+ * Supports case-insensitive role filtering using a regular expression.
+ * Returns an array of user objects or an error message if retrieval fails.
+ * @param {Object} req - Express request object with optional role query parameter.
+ * @param {Object} res - Express response object for sending user data or error status.
+ * @returns {Array} JSON array of user objects or error message.
  */
 const getAllUsers = async (req, res) => {
     const { role } = req.query;
@@ -165,10 +174,11 @@ const getAllUsers = async (req, res) => {
 };
 
 /**
- * Allows a csv of all users to be downloaded
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Downloads all users as a CSV file, optionally filtered by role and with specified fields.
+ * Uses json2csv to format user data and sends the CSV as an attachment in the response.
+ * @param {Object} req - Express request object with optional role and fields query parameters.
+ * @param {Object} res - Express response object for sending the CSV file or error status.
+ * @returns {String} CSV file containing user data or error message.
  */
 const downloadUsers = async (req, res) => {
     const { role, fields } = req.query;
@@ -199,10 +209,11 @@ const downloadUsers = async (req, res) => {
 };
 
 /**
- * Gets the total number of students
- * @param {*} req
- * @param {*} res
- * @returns
+ * Returns the total number of users with the role 'student'.
+ * Counts student users in the database and responds with the count as a number.
+ * @param {Object} req - Express request object (not used).
+ * @param {Object} res - Express response object for sending the count or error status.
+ * @returns {Number} JSON response with the total number of students or error message.
  */
 const getTotalStudents = async (req, res) => {
     try {
@@ -217,10 +228,12 @@ const getTotalStudents = async (req, res) => {
 };
 
 /**
- * allows a csv of users to be uploaded
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Uploads a CSV file of users and adds or updates users in the database.
+ * Reads the CSV file, checks for required columns, and saves each user (new or existing).
+ * Responds with a success message or error if upload fails.
+ * @param {Object} req - Express request object containing the uploaded file.
+ * @param {Object} res - Express response object for sending status messages.
+ * @returns {Object} JSON response with success or error message.
  */
 const uploadUsers = async (req, res) => {
     try {

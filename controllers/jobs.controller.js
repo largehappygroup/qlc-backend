@@ -1,7 +1,12 @@
 const Job = require("../models/Job.js");
 
 /**
- * Returns status for a queued job
+ * Retrieves the status of a queued job by its unique job ID.
+ * Returns job details including type, payload, status, progress, and timestamps.
+ * Responds with job information or an error if the job is not found or ID is missing.
+ * @param {Object} req - Express request object with job ID in params.
+ * @param {Object} res - Express response object for sending job status or error message.
+ * @returns {Object} JSON response with job status details or error message.
  */
 const getJobStatus = async (req, res) => {
     const jobId = req.params?.id;
@@ -33,7 +38,12 @@ const getJobStatus = async (req, res) => {
 };
 
 /**
- * Returns active job for a chapter (pending or in-progress)
+ * Retrieves the most recent active job (pending or in-progress) for a given assignment ID.
+ * Searches for jobs matching the assignment ID and returns job details if found.
+ * Responds with job information or an error if no active job is found or assignment ID is missing.
+ * @param {Object} req - Express request object with assignmentId in params.
+ * @param {Object} res - Express response object for sending job status or error message.
+ * @returns {Object} JSON response with job status details or error message.
  */
 const getJobByAssignment = async (req, res) => {
     const assignmentId = req.params?.assignmentId;

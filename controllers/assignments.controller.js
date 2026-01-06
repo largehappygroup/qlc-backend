@@ -3,10 +3,12 @@ const crypto = require("crypto");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 /**
- * Initializes a chapter assignment for a chapter
- * @param {*} req - request object
- * @param {*} res - response object
- * @returns - response object with updated status
+ * Creates a new assignment for a chapter.
+ * Validates required fields and saves the assignment to the database.
+ * Responds with the created assignment object or an error if validation fails.
+ * @param {Object} req - Express request object containing assignment details in body.
+ * @param {Object} res - Express response object for sending assignment data or error status.
+ * @returns {Object} JSON response with assignment data or error message.
  */
 const createAssignment = async (req, res) => {
     const { chapterId, title, identifier, instructions, startDate, dueDate } =
@@ -47,10 +49,11 @@ const createAssignment = async (req, res) => {
 };
 
 /**
- * Deletes a chapter assignment permanently
- * @param {*} req - request object, with chapter assignment ID in params
- * @param {*} res - response object
- * @returns - response object, sends message with updated status
+ * Deletes an assignment from the database by its unique ID (uuid).
+ * Returns a success message if the assignment is deleted, or an error if not found or ID is missing.
+ * @param {Object} req - Express request object with assignment ID in params.
+ * @param {Object} res - Express response object for sending status messages.
+ * @returns {Object} JSON response with success or error message.
  */
 const deleteAssignment = async (req, res) => {
     const id = req.params?.id;
@@ -82,10 +85,12 @@ const deleteAssignment = async (req, res) => {
 };
 
 /**
- * Updates a chapter assignment
- * @param {*} req - request object
- * @param {*} res - response object
- * @returns - response object with updated status
+ * Updates assignment details in the database by its uuid.
+ * Accepts updated assignment data in the request body and returns the updated assignment object.
+ * Responds with an error if the assignment is not found or ID is missing.
+ * @param {Object} req - Express request object with assignment uuid in params and updated data in body.
+ * @param {Object} res - Express response object for sending updated assignment data or error status.
+ * @returns {Object} JSON response with updated assignment data or error message.
  */
 const editAssignment = async (req, res) => {
     const uuid = req.params?.uuid;
@@ -115,10 +120,11 @@ const editAssignment = async (req, res) => {
 };
 
 /**
- * Retrieves a chapter assignment by ID.
- * @param {*} req - request details
- * @param {*} res - response details
- * @returns - response details (with status)
+ * Retrieves an assignment from the database by its uuid.
+ * Returns the assignment object if found, or an error if not found or ID is missing.
+ * @param {Object} req - Express request object with assignment ID in params.
+ * @param {Object} res - Express response object for sending assignment data or error status.
+ * @returns {Object} JSON response with assignment data or error message.
  */
 const getAssignment = async (req, res) => {
     const id = req.params?.id;
@@ -146,10 +152,12 @@ const getAssignment = async (req, res) => {
 };
 
 /**
- * Retrieves all chapters assignments, with optional filtering by chapterId and date.
- * @param {*} req - request details, with optional query parameters
- * @param {*} res - response details
- * @returns - array of chapter assignments (with status)
+ * Retrieves all assignments, optionally filtered by chapterId and/or date.
+ * Supports filtering assignments that are active on a given date.
+ * Returns an array of assignment objects or an error message if retrieval fails.
+ * @param {Object} req - Express request object with optional chapterId and date query parameters.
+ * @param {Object} res - Express response object for sending assignment data or error status.
+ * @returns {Array} JSON array of assignment objects or error message.
  */
 const getAllAssignments = async (req, res) => {
     const { chapterId, date } = req.query;
