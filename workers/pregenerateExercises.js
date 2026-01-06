@@ -13,7 +13,7 @@ const { generateExercise } = require("../services/exerciseGeneraton.js");
 
 async function run(jobId) {
     await connectDB();
-    
+
     const job = await Job.findOne({ uuid: jobId });
     if (!job) {
         console.error(`Job ${jobId} not found`);
@@ -25,8 +25,14 @@ async function run(jobId) {
     await job.save();
 
     const chapterId = job.payload?.chapterId;
-    const students = await User.find({ role: "student" }, { _id: 0, vuNetId: 1 });
-    const chapter = await Chapter.findOne({ uuid: chapterId }, { _id: 0 }).lean();
+    const students = await User.find(
+        { role: "student" },
+        { _id: 0, vuNetId: 1 }
+    );
+    const chapter = await Chapter.findOne(
+        { uuid: chapterId },
+        { _id: 0 }
+    ).lean();
     const assignments = chapter?.assignmentIds || [];
 
     const tasks = [];
@@ -41,7 +47,10 @@ async function run(jobId) {
 
     for (const t of tasks) {
         try {
-            const exists = await Exercise.findOne({ userId: t.userId, assignmentId: t.assignmentId });
+            const exists = await Exercise.findOne({
+                userId: t.userId,
+                assignmentId: t.assignmentId,
+            });
             if (exists) {
                 completed += 1;
                 job.progress = Math.round((completed / total) * 100);
@@ -58,10 +67,15 @@ async function run(jobId) {
             await job.save();
 
             if (completed === 1) {
-                console.log(`Job ${jobId}: first exercise created — progress ${job.progress}%`);
+                console.log(
+                    `Job ${jobId}: first exercise created — progress ${job.progress}%`
+                );
             }
         } catch (err) {
-            console.error(`Error processing task ${t.userId}/${t.assignmentId}:`, err.message);
+            console.error(
+                `Error processing task ${t.userId}/${t.assignmentId}:`,
+                err.message
+            );
             throw err;
             completed += 1;
             job.progress = Math.round((completed / total) * 100);
@@ -76,7 +90,17 @@ async function run(jobId) {
     job.progress = 100;
     await job.save();
     console.log(`Job ${jobId} completed by detached process.`);
-    process.exit(0);
+    if (process.env.pm_id) {
+        const { spawn } = require("child_process");
+        const delProc = spawn("pm2", ["delete", process.env.pm_id], {
+            stdio: "inherit",
+        });
+        delProc.on("close", () => {
+            process.exit(0);
+        });
+    } else {
+        process.exit(0);
+    }
 }
 
 const jobId = process.argv[2];
