@@ -24,12 +24,11 @@ const findLatestSubmissionFolder = async (assignmentIdentifier, studentEmail) =>
     try {
         dirStat = await fs.promises.stat(submissionsDir);
     } catch (err) {
-        throw new Error(`Submissions directory not found: ${submissionsDir}`);
+        // Directory does not exist
+        return null;
     }
     if (!dirStat.isDirectory()) {
-        throw new Error(
-            `Submissions path is not a directory: ${submissionsDir}`
-        );
+        return null;
     }
 
     const entries = await fs.promises.readdir(submissionsDir, {
@@ -41,9 +40,7 @@ const findLatestSubmissionFolder = async (assignmentIdentifier, studentEmail) =>
         .map((d) => path.join(submissionsDir, d.name));
 
     if (candidateDirs.length === 0) {
-        throw new Error(
-            `No submission folders found for student "${studentEmail}" in ${submissionsDir}`
-        );
+        return null;
     }
 
     // pick the directory with the most recent mtime
@@ -115,6 +112,10 @@ const getStudentJavaFiles = async (
         assignmentIdentifier,
         studentEmail
     );
+    if (!latestFolder) {
+        // No submission folder found
+        return [];
+    }
     const javaFilePaths = await getJavaFilesFromFolder(latestFolder, options);
 
     if (javaFilePaths.length === 0) {
@@ -169,12 +170,8 @@ const getSubmission= async (studentEmail, assignmentIdentifier, options = {}) =>
  * @returns {Promise<boolean>} True if the folder exists, false otherwise.
  */
 const doesSubmissionFolderExist = async (assignmentIdentifier, studentEmail) => {
-    try {
-        const folderPath = await findLatestSubmissionFolder(assignmentIdentifier, studentEmail);
-        return !!folderPath; // Return true if a folder path is found
-    } catch (error) {
-        return false; // Return false if an error occurs (e.g., folder not found)
-    }
+    const folderPath = await findLatestSubmissionFolder(assignmentIdentifier, studentEmail);
+    return !!folderPath; // Return true if a folder path is found
 };
 
 const checkStudentScore = async (assignmentIdentifier, studentEmail) => {
