@@ -110,8 +110,23 @@ const createExercises = async (req, res) => {
                     detached: false,
                     stdio: "inherit",
                 });
-                // No unref, keep attached for log visibility
-                child.unref();
+
+                // Listen for the close event to check exit code
+                child.on("close", (code) => {
+                    if (code === 0) {
+                        // On success, delete the pm2 process
+                        const deleteArgs = [
+                            "delete",
+                            `pregenerate-${job.uuid}`
+                        ];
+                        const delProc = spawn("pm2", deleteArgs, {
+                            detached: false,
+                            stdio: "inherit",
+                        });
+                    }
+                    // If code !== 0, do nothing (leave process for inspection)
+                });
+        
             } catch (spawnErr) {
                 console.error(
                     "Failed to spawn pregenerate script:",
