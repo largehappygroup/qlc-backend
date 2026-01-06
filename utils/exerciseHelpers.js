@@ -52,8 +52,8 @@ const validSubmission = async (author, assignment) => {
 
 /**
  * randomly shuffles an array of candidates
- * @param {*} candidates 
- * @returns 
+ * @param {*} candidates
+ * @returns
  */
 const shuffleCandidates = (candidates) => {
     const result = [...candidates];
@@ -80,14 +80,14 @@ const findAuthor = async (user, assignment) => {
         { _id: 0 }
     );
     const candidates = shuffleCandidates(users);
-    console.log("candidates", candidates.map(c => c.vuNetId).join(", "));
+    console.log("candidates", candidates.map((c) => c.vuNetId).join(", "));
     // study group A is self, study group B is others
     if (user.studyGroup === "A") {
         author = user;
-        if (!validSubmission(author, assignment)) {
+        if (!(await validSubmission(author, assignment))) {
             // try to find a submission from other participants (random order)
             for (const candidate of candidates) {
-                if (validSubmission(candidate, assignment)) {
+                if (await validSubmission(candidate, assignment)) {
                     author = candidate;
                     break;
                 }
@@ -96,7 +96,7 @@ const findAuthor = async (user, assignment) => {
     } else {
         // First, try to find a submission from other participants (random order)
         for (const candidate of candidates) {
-            if (validSubmission(candidate, assignment)) {
+            if (await validSubmission(candidate, assignment)) {
                 author = candidate;
                 break;
             }
@@ -104,7 +104,7 @@ const findAuthor = async (user, assignment) => {
 
         // If no other participant had a submission, finally try the current user as a fallback
         if (!author) {
-            if (validSubmission(user, assignment)) {
+            if (await validSubmission(user, assignment)) {
                 author = user;
             }
         }
