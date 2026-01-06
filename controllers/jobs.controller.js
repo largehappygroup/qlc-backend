@@ -35,14 +35,13 @@ const getJobStatus = async (req, res) => {
 /**
  * Returns active job for a chapter (pending or in-progress)
  */
-const getJobByChapter = async (req, res) => {
-    const chapterId = req.params?.chapterId;
+const getJobByAssignment = async (req, res) => {
+    const assignmentId = req.params?.assignmentId;
     try {
-        if (!chapterId)
-            return res.status(400).send({ message: "Missing Chapter ID." });
-
+        if (!assignmentId)
+            return res.status(400).send({ message: "Missing Assignment ID." });
         const job = await Job.findOne({
-            "payload.chapterId": chapterId,
+            "payload.assignmentId": assignmentId,
             status: { $in: ["pending", "in-progress"] },
         })
             .sort({ createdAt: -1 })
@@ -78,5 +77,5 @@ const getJobByChapter = async (req, res) => {
 
 module.exports = {
     getJobStatus,
-    getJobByChapter,
+    getJobByAssignment,
 };

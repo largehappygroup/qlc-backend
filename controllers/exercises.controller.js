@@ -55,33 +55,24 @@ const regenerateExercise = async (req, res) => {
  * @returns - response details (with status)
  */
 const createExercises = async (req, res) => {
-    const { chapterId } = req.query;
+    const {assignmentId } = req.query;
 
     try {
-        if (chapterId) {
+        if (assignmentId) {
             // compute totalTasks so frontend can show progress if desired
             const students = await User.find(
                 { role: "student" },
                 { _id: 0, vuNetId: 1 }
             );
-
-            const chapter = await Chapter.findOne(
-                { uuid: chapterId },
-                { _id: 0 }
-            );
-
-            const totalTasks =
-                students.length * (chapter?.assignmentIds?.length || 0);
-
             // create a Job document so a background script can pick it up
             const job = new Job({
                 uuid: crypto.randomUUID(),
                 type: "createExercises",
                 payload: {
-                    chapterId,
+                    assignmentId,
                     requestedBy: req.headers["remote-user-vunetid"],
                 },
-                totalTasks,
+                totalTasks: students.length,
                 progress: 0,
                 status: "pending",
             });
@@ -128,7 +119,7 @@ const createExercises = async (req, res) => {
                     "Exercise creation requested. Processing in background.",
             });
         } else {
-            return res.status(400).send({ message: "Chapter ID not found." });
+            return res.status(400).send({ message: "Assignment ID not found." });
         }
     } catch (err) {
         console.error(err.message);

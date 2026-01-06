@@ -3,9 +3,9 @@ const router = express.Router({ mergeParams: true });
 const { authenticate } = require("../middleware/auth.js");
 const {
     getJobStatus,
-    getJobByChapter,
+    getJobByAssignment,
 } = require("../controllers/jobs.controller.js");
 
 router.get("/:id", authenticate, getJobStatus);
-router.get("/by-chapter/:chapterId", authenticate, getJobByChapter);
+router.get("/by-assignment/:assignmentId", authenticate, getJobByAssignment);
 module.exports = router;
