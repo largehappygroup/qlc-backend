@@ -1,6 +1,7 @@
 // Used for exercise.controllers.js
 const User = require("../models/User.js");
 const { doesSubmissionFolderExist } = require("./studentSubmission.js");
+const { checkStudentScore } = require("./studentSubmission.js");
 
 /**
  * shuffles the available answers and filters out sensitive information from a question object.
@@ -73,11 +74,13 @@ const findAuthor = async (user, assignment) => {
     let author;
     const users = await User.find(
         {
+            role: "student",
             vuNetId: { $ne: user.vuNetId },
         },
         { _id: 0 }
     );
     const candidates = shuffleCandidates(users);
+    console.log("candidates", candidates.map(c => c.vuNetId).join(", "));
     // study group A is self, study group B is others
     if (user.studyGroup === "A") {
         author = user;
