@@ -1,21 +1,21 @@
 const fs = require("fs");
 const path = require("path");
 /**
- * Get the submissions directory for an assignment
- * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A)
- * @returns {string}
+ * Returns the absolute path to the submissions directory for a given assignment.
+ * Used to locate where student submissions are stored for a specific assignment.
+ * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A).
+ * @returns {string} Absolute path to the submissions directory for the assignment.
  */
 const getSubmissionsDir = (assignmentIdentifier) =>
     path.join(__dirname, "../..", "assignment-submissions", assignmentIdentifier, "submissions");
 
 /**
- * Find the most recent submission folder for a student in an assignment's submissions dir.
- * Looks for directories that start with `${studentEmail}-` and returns the path of the directory
- * with the most recent mtime.
- * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A)
- * @param {string} studentEmail
- * @returns {Promise<string>} absolute path to the most recent submission folder
- * @throws {Error} if submissions dir or matching folder not found
+ * Finds the most recent submission folder for a student in an assignment's submissions directory.
+ * Searches for directories matching the student's email prefix and returns the one with the latest modification time.
+ * Returns null if no matching folder is found or the directory does not exist.
+ * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A).
+ * @param {string} studentEmail - The email of the student.
+ * @returns {Promise<string|null>} Absolute path to the most recent submission folder, or null if not found.
  */
 const findLatestSubmissionFolder = async (assignmentIdentifier, studentEmail) => {
     const submissionsDir = getSubmissionsDir(assignmentIdentifier);
@@ -61,11 +61,12 @@ const findLatestSubmissionFolder = async (assignmentIdentifier, studentEmail) =>
 };
 
 /**
- * Get all .java files from a folder. Optionally recurse into subdirectories.
- * @param {string} folderPath
- * @param {object} [options]
- * @param {boolean} [options.recursive=false]
- * @returns {Promise<string[]>} array of absolute file paths
+ * Retrieves all .java files from a folder, optionally recursing into subdirectories.
+ * Returns an array of absolute file paths for each .java file found.
+ * @param {string} folderPath - The path to the folder to search.
+ * @param {object} [options] - Optional settings.
+ * @param {boolean} [options.recursive=false] - Whether to search subdirectories recursively.
+ * @returns {Promise<string[]>} Array of absolute file paths for .java files.
  */
 const getJavaFilesFromFolder = async (folderPath, options = {}) => {
     const { recursive = false } = options;
@@ -95,13 +96,13 @@ const getJavaFilesFromFolder = async (folderPath, options = {}) => {
 };
 
 /**
- * Read all .java files for the latest submission of a given student and assignment.
- * Returns an array of { filename, path, content } objects.
- * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A)
- * @param {string} studentEmail
- * @param {object} [options]
- * @param {boolean} [options.recursive=false]
- * @returns {Promise<Array<{filename:string, path:string, content:string}>>}
+ * Reads all .java files for the latest submission of a given student and assignment.
+ * Returns an array of objects containing filename, path, and file content for each .java file found.
+ * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A).
+ * @param {string} studentEmail - The email of the student.
+ * @param {object} [options] - Optional settings.
+ * @param {boolean} [options.recursive=false] - Whether to search subdirectories recursively.
+ * @returns {Promise<Array<{filename:string, path:string, content:string}>>} Array of file info objects.
  */
 const getStudentJavaFiles = async (
     assignmentIdentifier,
@@ -138,13 +139,13 @@ const getStudentJavaFiles = async (
 };
 
 /**
- * Convenience function to fetch concatenated student code (all .java files).
- * If no files are found this returns an empty string.
- * @param {string} studentEmail
- * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A)
- * @param {object} [options]
- * @param {boolean} [options.recursive=false]
- * @returns {Promise<string>}
+ * Fetches and concatenates all .java files for a student's latest submission for a given assignment.
+ * Returns a single string with file boundaries clearly marked, or an empty string if no files are found.
+ * @param {string} studentEmail - The email of the student.
+ * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A).
+ * @param {object} [options] - Optional settings.
+ * @param {boolean} [options.recursive=false] - Whether to search subdirectories recursively.
+ * @returns {Promise<string>} Concatenated string of all .java file contents, or empty string if none found.
  */
 const getSubmission= async (studentEmail, assignmentIdentifier, options = {}) => {
     const files = await getStudentJavaFiles(
@@ -165,6 +166,7 @@ const getSubmission= async (studentEmail, assignmentIdentifier, options = {}) =>
 
 /**
  * Checks if a submission folder exists for a given student and assignment.
+ * Returns true if a valid submission folder is found, false otherwise.
  * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A).
  * @param {string} studentEmail - The email of the student.
  * @returns {Promise<boolean>} True if the folder exists, false otherwise.
@@ -174,6 +176,14 @@ const doesSubmissionFolderExist = async (assignmentIdentifier, studentEmail) => 
     return !!folderPath; // Return true if a folder path is found
 };
 
+/**
+ * Checks if a student's score for a given assignment meets the required threshold (>= 75%).
+ * Reads the assignment's CSV file, locates the student's row, and calculates the correctness percentage.
+ * Returns true if the student meets the threshold, false otherwise.
+ * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A).
+ * @param {string} studentEmail - The email of the student.
+ * @returns {Promise<boolean>} True if the student's score is >= 75%, false otherwise.
+ */
 const checkStudentScore = async (assignmentIdentifier, studentEmail) => {
     try {
         const submissionsDir = path.join(
@@ -190,14 +200,14 @@ const checkStudentScore = async (assignmentIdentifier, studentEmail) => {
         const lines = data.split(/\r?\n/).filter(Boolean);
         if (lines.length < 2) return false; // no data
 
-        // Parse header
+        // Parse header row to find relevant columns
         const headers = lines[0].split(",").map(h => h.trim());
         const usernameIdx = headers.findIndex(h => h.toLowerCase() === "username");
         const totalIdx = headers.findIndex(h => h.toLowerCase() === "correctness total");
         const possibleIdx = headers.findIndex(h => h.toLowerCase() === "correctness total possible");
         if (usernameIdx === -1 || totalIdx === -1 || possibleIdx === -1) return false;
 
-        // Find student row
+        // Find the student's row and calculate percentage
         for (let i = 1; i < lines.length; i++) {
             const row = lines[i].split(",").map(cell => cell.trim());
             if (row[usernameIdx] === studentEmail) {

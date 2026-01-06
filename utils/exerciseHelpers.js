@@ -4,9 +4,11 @@ const { doesSubmissionFolderExist } = require("./studentSubmission.js");
 const { checkStudentScore } = require("./studentSubmission.js");
 
 /**
- * shuffles the available answers and filters out sensitive information from a question object.
- * @param {*} question - question object from Exercise model
- * @returns filtered question object
+ * Filters a question object to remove sensitive information and randomize answer order.
+ * Combines the correct answer and other answers, shuffles them, and returns a filtered question object
+ * with only the necessary fields for display to the user.
+ * @param {Object} question - Question object from the Exercise model.
+ * @returns {Object} Filtered question object with randomized answers and selected fields.
  */
 const filterQuestion = (question) => {
     let availableAnswers = [question.correctAnswer, ...question.otherAnswers]
@@ -31,10 +33,11 @@ const filterQuestion = (question) => {
 };
 
 /**
- * checks that the submission exists for the user and it met the score threshold
- * @param {*} author - mongoose user object for potential candidate
- * @param {*} assignment - mongoose assignment object with details
- * @returns - boolean, true if we can use the submission
+ * Checks if a submission exists for the user and assignment, and if it meets the score threshold.
+ * Uses helper functions to verify both the existence of the submission folder and the student's score.
+ * @param {Object} author - Mongoose user object for the candidate author.
+ * @param {Object} assignment - Mongoose assignment object with assignment details.
+ * @returns {boolean} True if the submission exists and meets the score threshold, false otherwise.
  */
 const validSubmission = async (author, assignment) => {
     const hasSubmission = await doesSubmissionFolderExist(
@@ -51,9 +54,10 @@ const validSubmission = async (author, assignment) => {
 };
 
 /**
- * randomly shuffles an array of candidates
- * @param {*} candidates
- * @returns
+ * Randomly shuffles an array of candidate objects using the Fisher-Yates algorithm.
+ * Returns a new array with the candidates in randomized order.
+ * @param {Array<Object>} candidates - Array of candidate objects to shuffle.
+ * @returns {Array<Object>} Shuffled array of candidates.
  */
 const shuffleCandidates = (candidates) => {
     const result = [...candidates];
@@ -65,10 +69,13 @@ const shuffleCandidates = (candidates) => {
 };
 
 /**
- * finds a suitable submission author for the given user and assignment.
- * @param {*} user - the user requesting the exercise
- * @param {*} assignment - the assignment for which to find a submission
- * @returns the author user object
+ * Finds a suitable submission author for a given user and assignment.
+ * For study group A, prefers the user themselves if they have a valid submission, otherwise searches other students.
+ * For study group B, searches other students first, then falls back to the user if no valid submission is found.
+ * Returns the author user object who has a valid submission for the assignment.
+ * @param {Object} user - The user requesting the exercise.
+ * @param {Object} assignment - The assignment for which to find a submission author.
+ * @returns {Object|null} The author user object with a valid submission, or null if none found.
  */
 const findAuthor = async (user, assignment) => {
     let author;

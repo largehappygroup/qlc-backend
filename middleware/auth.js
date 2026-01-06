@@ -1,3 +1,5 @@
+const User = require("../models/User.js");
+
 /**
  * checks for the presence of VUNetID in the request headers
  * @param {*} req - request object
@@ -15,20 +17,33 @@ const authenticate = (req, res, next) => {
     next();
 };
 
+/**
+ * checks if the user has one of the required roles
+ * @param {*} roles - array of roles allowed to access the route
+ * @returns - middleware function that verifies user role
+ */
 const requireRole = async (roles) => {
     return async (req, res, next) => {
-        const vuNetId = req.headers["remote-user-vunetid"];
-        const user = await User.findOne({ vuNetId: vuNetId }, { role: 1, _id: 0 });
-        if (!user || !roles.includes(user.role)) {
-            return res
-                .status(403)
-                .send({ message: "Forbidden: Insufficient permissions." });
+        try {
+            const vuNetId = req.headers["remote-user-vunetid"];
+            const user = await User.findOne(
+                { vuNetId: vuNetId },
+                { role: 1, _id: 0 }
+            );
+            if (!user || !roles.includes(user.role)) {
+                return res
+                    .status(403)
+                    .send({ message: "Forbidden: Insufficient permissions." });
+            }
+            next();
+        } catch (err) {
+            console.error("Error in role verification:", err);
+            return res.status(500).send({ message: "Internal server error." });
         }
-        next();
-    }
-}
+    };
+};
 
 module.exports = {
     authenticate,
-    requireRole
+    requireRole,
 };
