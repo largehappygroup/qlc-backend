@@ -24,22 +24,14 @@ async function run(jobId) {
     job.status = "in-progress";
     await job.save();
 
-    const chapterId = job.payload?.chapterId;
+    const assignmentId = job.payload?.assignmentId;
     const students = await User.find(
         { role: "student" },
         { _id: 0, vuNetId: 1 }
     );
-    const chapter = await Chapter.findOne(
-        { uuid: chapterId },
-        { _id: 0 }
-    ).lean();
-    const assignments = chapter?.assignmentIds || [];
-
     const tasks = [];
     for (const student of students) {
-        for (const assignmentId of assignments) {
-            tasks.push({ userId: student.vuNetId, assignmentId });
-        }
+        tasks.push({ userId: student.vuNetId, assignmentId });
     }
 
     const total = Number(job.totalTasks) || tasks.length;
