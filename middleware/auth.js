@@ -22,7 +22,7 @@ const authenticate = (req, res, next) => {
  * @param {*} roles - array of roles allowed to access the route
  * @returns - middleware function that verifies user role
  */
-const requireRole = async (roles) => {
+const requireRole = (roles) => {
     return async (req, res, next) => {
         try {
             const vuNetId = req.headers["remote-user-vunetid"];
