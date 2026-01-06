@@ -9,7 +9,7 @@ const {
     editExercise,
     getAllExercises,
     downloadExercises,
-    getExercise,
+    getMostRecentExercise,
     checkQuestion,
     getAverageScore,
     getAverageTimeSpent,
@@ -27,8 +27,8 @@ router.get("/distribution", authenticate, getAverageScoreDistribution);
 router.get("/average", authenticate, getAverageScore);
 router.get("/recent-activity", authenticate, getRecentActivity);
 router.get("/time-spent", authenticate, getAverageTimeSpent);
+router.get("/most-recent", authenticate, getMostRecentExercise);
 router.get("/", authenticate, getAllExercises);
-router.get("/:assignmentId", authenticate, getExercise);
 router.delete("/:id", authenticate, deleteExercise);
 router.post("/:id/check", authenticate, checkQuestion);
 

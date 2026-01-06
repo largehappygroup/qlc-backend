@@ -210,13 +210,13 @@ const editExercise = async (req, res) => {
  * @param {*} res - response details
  * @returns - response details (with status)
  */
-const getExercise = async (req, res) => {
-    const assignmentId = req.params?.assignmentId;
+const getMostRecentExercise = async (req, res) => {
+    const {assignmentId, userId} = req.query;
     try {
-        if (assignmentId) {
+        if (assignmentId && userId) {
             // Find all exercises with this assignmentId (should be one, but just in case)
             const exercises = await Exercise.find(
-                { assignmentId: assignmentId },
+                { assignmentId: assignmentId, userId: userId },
                 { _id: 0 }
             ).lean();
             if (!exercises || exercises.length === 0) {
@@ -761,7 +761,7 @@ module.exports = {
     createExercises,
     deleteExercise,
     editExercise,
-    getExercise,
+    getMostRecentExercise,
     getAllExercises,
     downloadExercises,
     checkQuestion,
