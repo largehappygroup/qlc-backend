@@ -251,10 +251,7 @@ const uploadUsers = async (req, res) => {
                 }
             })
             .on("data", async (row) => {
-                let user = await User.findOne(
-                    { vuNetId: row["vuNetId"] },
-                    { _id: 0 }
-                );
+                let user = await User.findOne({ vuNetId: row["vuNetId"] });
                 if (!user) {
                     user = new User(row);
                 } else {

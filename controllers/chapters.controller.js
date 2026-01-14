@@ -47,7 +47,6 @@ const createChapter = async (req, res) => {
                         chapterId: chapter.uuid,
                     });
                     await newAssignment.save();
-                    chapter.assignmentIds.push(newAssignment.uuid);
                 }
             }
             await chapter.save();
@@ -86,13 +85,16 @@ const deleteChapter = async (req, res) => {
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
             }
-            if (chapter.assignmentIds) {
-                for (const assignmentId of chapter.assignmentIds) {
-                    await Assignment.findOneAndDelete(
-                        { uuid: assignmentId },
-                        { _id: 0 }
-                    );
-                }
+
+            const assignments = await Assignment.find(
+                { chapterId: id },
+                { _id: 0 }
+            );
+            for (const assignment of assignments) {
+                await Assignment.findOneAndDelete(
+                    { uuid: assignment.uuid },
+                    { _id: 0 }
+                );
             }
 
             const chaptersToFixOrder = await Chapter.find(
@@ -163,8 +165,6 @@ const editChapter = async (req, res) => {
             chapter.requestFeedback = requestFeedback;
 
             if (assignments) {
-                const newAssignmentIds = [];
-
                 const incomingAssignmentIds = assignments
                     .filter((assignment) => assignment.uuid)
                     .map((assignment) => assignment.uuid);
@@ -188,7 +188,6 @@ const editChapter = async (req, res) => {
                     if (a.uuid) {
                         // Update existing assignment
                         await Assignment.findOneAndUpdate({ uuid: a.uuid }, a);
-                        newAssignmentIds.push(a.uuid);
                     } else {
                         // Create new assignment
                         const newA = new Assignment({
@@ -199,17 +198,16 @@ const editChapter = async (req, res) => {
                             chapterId: id,
                         });
                         await newA.save();
-                        newAssignmentIds.push(newA.uuid);
                     }
                 }
-
-                // 3. Update chapter assignment list
-                chapter.assignmentIds = newAssignmentIds;
             }
 
             await chapter.save();
 
-            const updatedChapter = await Chapter.findOne({ uuid: id }, { _id: 0 });
+            const updatedChapter = await Chapter.findOne(
+                { uuid: id },
+                { _id: 0 }
+            );
 
             return res.status(200).json(updatedChapter);
         } else {

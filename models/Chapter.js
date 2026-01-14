@@ -16,10 +16,6 @@ const ChapterSchema = new Schema({
         type: Number,
         required: true, // Chapter 1 vs. Chapter 2 etc
     },
-    assignmentIds: [{
-        type: String, // corresponding assignment IDs for the chapter
-        ref: "Assignment",
-    }],
     learningObjectives: [{
         type: String, // list of learning objectives based on CS1101
         required: true
