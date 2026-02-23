@@ -5,12 +5,12 @@ const { authenticate, requireRole } = require("../middleware/auth.js");
 
 const {
     createUser,
-    deleteUser,
-    editUser,
+    deleteUserById,
+    editUserById,
     getAllUsers,
     downloadUsers,
     uploadUsers,
-    getUser,
+    getUserById,
     getTotalStudents,
 } = require("../controllers/users.controller.js");
 
@@ -24,7 +24,7 @@ router.post(
     uploadUsers
 );
 router.post("/", authenticate, createUser);
-router.put("/:id", authenticate, requireRole(["admin", "faculty"]), editUser);
+router.put("/:userId", authenticate, requireRole(["admin", "faculty"]), editUserById);
 router.get(
     "/download",
     authenticate,
@@ -38,11 +38,11 @@ router.get(
     getTotalStudents
 );
 router.get("/", authenticate, requireRole(["admin", "faculty"]), getAllUsers);
-router.get("/:id", authenticate, getUser);
+router.get("/:userId", authenticate, getUserById);
 router.delete(
-    "/:id",
+    "/:userId",
     authenticate,
     requireRole(["admin", "faculty"]),
-    deleteUser
+    deleteUserById
 );
 module.exports = router;

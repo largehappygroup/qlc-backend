@@ -148,7 +148,8 @@ const generateExercise = async (userId, assignmentId) => {
 
     const submission = await getSubmission(
         author.email,
-        assignment.identifier
+        assignment.identifier,
+        author.studyParticipation
     );
 
     const questionCategories = await questionCategoriesGeneration(
@@ -189,6 +190,7 @@ const generateExercise = async (userId, assignmentId) => {
             uuid: crypto.randomUUID(),
             difficulty: "easy",
             timeSpent: 0,
+            status: "not-attempted",
             type: "multiple-choice",
         }));
 

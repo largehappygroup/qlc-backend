@@ -4,15 +4,15 @@ const { authenticate, requireRole } = require("../middleware/auth.js");
 
 const {
     createAssignment,
-    deleteAssignment,
-    editAssignment,
+    deleteAssignmentById,
+    editAssignmentById,
     getAllAssignments,
-    getAssignment,
+    getAssignmentById,
 } = require("../controllers/assignments.controller.js");
 
 router.post("/", authenticate, requireRole(["admin", "faculty"]), createAssignment);
-router.put("/:id", authenticate, requireRole(["admin", "faculty"]), editAssignment);
+router.put("/:assignmentId", authenticate, requireRole(["admin", "faculty"]), editAssignmentById);
 router.get("/", authenticate, getAllAssignments);
-router.get("/:id", authenticate, getAssignment);
-router.delete("/:id", authenticate, requireRole(["admin", "faculty"]), deleteAssignment);
+router.get("/:assignmentId", authenticate, getAssignmentById);
+router.delete("/:assignmentId", authenticate, requireRole(["admin", "faculty"]), deleteAssignmentById);
 module.exports = router;

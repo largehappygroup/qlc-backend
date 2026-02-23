@@ -12,7 +12,7 @@ const API_ENDPOINT = `${process.env.BASE_URL}/chat`; // for generative capabilit
 function buildApiPayload(systemPrompt, userPrompt) {
   return {
     data: {
-      model: "gpt-4o",
+      model: "gpt-5.2",
       temperature: 0.7,
       max_tokens: 100000, // make sure enough tokens are given to receive the entire response
       dataSources: [],
@@ -23,7 +23,7 @@ function buildApiPayload(systemPrompt, userPrompt) {
       options: {
         ragOnly: false,
         skipRag: true,
-        model: { id: "gpt-4o" },
+        model: { id: "gpt-5.2" },
         prompt: userPrompt,
       },
     },

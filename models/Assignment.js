@@ -28,15 +28,9 @@ const AssignmentSchema = new Schema({
     identifier: {
         type: String,
         required: true, // (ex. PA05-W)
+        unique: true,
     },
-    instructions: {
-        type: String,
-        required: true, // basic instructions given to students
-    },
-    startDate: {
-        type: Date,
-        required: true // when to assign students their exercises
-    },
+  
     dueDate: {
         type: Date,
         required: true, // when exercises are due for the students

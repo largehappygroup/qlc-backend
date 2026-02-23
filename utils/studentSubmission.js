@@ -6,8 +6,37 @@ const path = require("path");
  * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A).
  * @returns {string} Absolute path to the submissions directory for the assignment.
  */
-const getSubmissionsDir = (assignmentIdentifier) =>
-    path.join(__dirname, "../..", "assignment-submissions", assignmentIdentifier, "submissions");
+const getSubmissionsDir = (assignmentIdentifier, studyParticipation) => {
+    return path.join(
+        __dirname,
+        "..",
+        "assignment-submissions",
+        assignmentIdentifier,
+        `${studyParticipation ? "include-" : "not-include-"}submissions`,
+    );
+};
+
+// Returns the most recent submission folder for a student, searching both include and not-include folders if needed
+const findLatestSubmissionFolderFlexible = async (
+    assignmentIdentifier,
+    studentEmail,
+    studyParticipation
+) => {
+    // Try the preferred group first
+    let folder = await findLatestSubmissionFolder(
+        assignmentIdentifier,
+        studentEmail,
+        studyParticipation
+    );
+    if (folder) return folder;
+    // Fallback: try the other group
+    folder = await findLatestSubmissionFolder(
+        assignmentIdentifier,
+        studentEmail,
+        !studyParticipation
+    );
+    return folder;
+};
 
 /**
  * Finds the most recent submission folder for a student in an assignment's submissions directory.
@@ -15,10 +44,15 @@ const getSubmissionsDir = (assignmentIdentifier) =>
  * Returns null if no matching folder is found or the directory does not exist.
  * @param {string} assignmentIdentifier - The identifier of the assignment (e.g., PA06-A).
  * @param {string} studentEmail - The email of the student.
+ * @param {boolean} studyParticipation - Whether the student participated in the study.
  * @returns {Promise<string|null>} Absolute path to the most recent submission folder, or null if not found.
  */
-const findLatestSubmissionFolder = async (assignmentIdentifier, studentEmail) => {
-    const submissionsDir = getSubmissionsDir(assignmentIdentifier);
+const findLatestSubmissionFolder = async (
+    assignmentIdentifier,
+    studentEmail,
+    studyParticipation,
+) => {
+    const submissionsDir = getSubmissionsDir(assignmentIdentifier, studyParticipation);
 
     let dirStat;
     try {
@@ -54,7 +88,7 @@ const findLatestSubmissionFolder = async (assignmentIdentifier, studentEmail) =>
                 latestMtime = mtimeMs;
                 latestDir = dirPath;
             }
-        })
+        }),
     );
 
     return latestDir;
@@ -107,11 +141,13 @@ const getJavaFilesFromFolder = async (folderPath, options = {}) => {
 const getStudentJavaFiles = async (
     assignmentIdentifier,
     studentEmail,
-    options = {}
+    studyParticipation,
+    options = {},
 ) => {
-    const latestFolder = await findLatestSubmissionFolder(
+    const latestFolder = await findLatestSubmissionFolderFlexible(
         assignmentIdentifier,
-        studentEmail
+        studentEmail,
+        studyParticipation
     );
     if (!latestFolder) {
         // No submission folder found
@@ -132,7 +168,7 @@ const getStudentJavaFiles = async (
                 path: p,
                 content,
             };
-        })
+        }),
     );
 
     return fileReads;
@@ -147,20 +183,23 @@ const getStudentJavaFiles = async (
  * @param {boolean} [options.recursive=false] - Whether to search subdirectories recursively.
  * @returns {Promise<string>} Concatenated string of all .java file contents, or empty string if none found.
  */
-const getSubmission= async (studentEmail, assignmentIdentifier, options = {}) => {
+const getSubmission = async (
+    studentEmail,
+    assignmentIdentifier,
+    studyParticipation,
+    options = {},
+) => {
     const files = await getStudentJavaFiles(
         assignmentIdentifier,
         studentEmail,
-        options
+        studyParticipation,
+        options,
     );
     if (files.length === 0) return "";
 
     // join files with clear separators so the consumer can see file boundaries
     return files
-        .map(
-            (f) =>
-                `// ===== File: ${f.filename} =====\n${f.content.trim()}\n`
-        )
+        .map((f) => `// ===== File: ${f.filename} =====\n${f.content.trim()}\n`)
         .join("\n");
 };
 
@@ -171,8 +210,16 @@ const getSubmission= async (studentEmail, assignmentIdentifier, options = {}) =>
  * @param {string} studentEmail - The email of the student.
  * @returns {Promise<boolean>} True if the folder exists, false otherwise.
  */
-const doesSubmissionFolderExist = async (assignmentIdentifier, studentEmail) => {
-    const folderPath = await findLatestSubmissionFolder(assignmentIdentifier, studentEmail);
+const doesSubmissionFolderExist = async (
+    assignmentIdentifier,
+    studentEmail,
+    studyParticipation
+) => {
+    const folderPath = await findLatestSubmissionFolderFlexible(
+        assignmentIdentifier,
+        studentEmail,
+        studyParticipation
+    );
     return !!folderPath; // Return true if a folder path is found
 };
 
@@ -188,12 +235,12 @@ const checkStudentScore = async (assignmentIdentifier, studentEmail) => {
     try {
         const submissionsDir = path.join(
             __dirname,
-            "../..",
+            "..",
             "assignment-submissions",
-            assignmentIdentifier
+            assignmentIdentifier,
         );
         const files = await fs.promises.readdir(submissionsDir);
-        const csvFile = files.find(f => f.toLowerCase().endsWith('.csv'));
+        const csvFile = files.find((f) => f.toLowerCase().endsWith(".csv"));
         if (!csvFile) return false;
         const csvPath = path.join(submissionsDir, csvFile);
         const data = await fs.promises.readFile(csvPath, "utf8");
@@ -201,19 +248,27 @@ const checkStudentScore = async (assignmentIdentifier, studentEmail) => {
         if (lines.length < 2) return false; // no data
 
         // Parse header row to find relevant columns
-        const headers = lines[0].split(",").map(h => h.trim());
-        const usernameIdx = headers.findIndex(h => h.toLowerCase() === "username");
-        const totalIdx = headers.findIndex(h => h.toLowerCase() === "correctness total");
-        const possibleIdx = headers.findIndex(h => h.toLowerCase() === "correctness total possible");
-        if (usernameIdx === -1 || totalIdx === -1 || possibleIdx === -1) return false;
+        const headers = lines[0].split(",").map((h) => h.trim());
+        const usernameIdx = headers.findIndex(
+            (h) => h.toLowerCase() === "username",
+        );
+        const totalIdx = headers.findIndex(
+            (h) => h.toLowerCase() === "correctness total",
+        );
+        const possibleIdx = headers.findIndex(
+            (h) => h.toLowerCase() === "correctness total possible",
+        );
+        if (usernameIdx === -1 || totalIdx === -1 || possibleIdx === -1)
+            return false;
 
         // Find the student's row and calculate percentage
         for (let i = 1; i < lines.length; i++) {
-            const row = lines[i].split(",").map(cell => cell.trim());
+            const row = lines[i].split(",").map((cell) => cell.trim());
             if (row[usernameIdx] === studentEmail) {
                 const total = parseFloat(row[totalIdx]);
                 const possible = parseFloat(row[possibleIdx]);
-                if (isNaN(total) || isNaN(possible) || possible === 0) return false;
+                if (isNaN(total) || isNaN(possible) || possible === 0)
+                    return false;
                 const percent = (total / possible) * 100;
                 return percent >= 75;
             }
@@ -222,11 +277,13 @@ const checkStudentScore = async (assignmentIdentifier, studentEmail) => {
     } catch (err) {
         return false;
     }
-}
+};
 
 module.exports = {
     getSubmission,
     getStudentJavaFiles,
     doesSubmissionFolderExist,
     checkStudentScore,
+    getSubmissionsDir,
+    findLatestSubmissionFolderFlexible,
 };

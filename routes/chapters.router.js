@@ -4,18 +4,18 @@ const { authenticate, requireRole } = require("../middleware/auth.js");
 
 const {
     createChapter,
-    deleteChapter,
-    editChapter,
+    deleteChapterById,
+    editChapterById,
     getAllChapters,
-    getChapter,
+    getChapterById,
     editAllChapters,
 } = require("../controllers/chapters.controller.js");
 
 router.post("/", authenticate, requireRole(["admin", "faculty"]), createChapter);
 router.put("/", authenticate, requireRole(["admin", "faculty"]), editAllChapters);
-router.put("/:id", authenticate, requireRole(["admin", "faculty"]), editChapter);
+router.put("/:chapterId", authenticate, requireRole(["admin", "faculty"]), editChapterById);
 router.get("/", authenticate, getAllChapters);
-router.get("/:id", authenticate, getChapter);
-router.delete("/:id", authenticate, requireRole(["admin", "faculty"]), deleteChapter);
+router.get("/:chapterId", authenticate, getChapterById);
+router.delete("/:chapterId", authenticate, requireRole(["admin", "faculty"]), deleteChapterById);
 
 module.exports = router;

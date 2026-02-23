@@ -59,14 +59,14 @@ const regenerateExercise = async (req, res) => {
  * @returns {Object} JSON response with job status and message or error.
  */
 const createExercises = async (req, res) => {
-    const {assignmentId } = req.query;
+    const { assignmentId } = req.query;
 
     try {
         if (assignmentId) {
             // compute totalTasks so frontend can show progress if desired
             const students = await User.find(
                 { role: "student" },
-                { _id: 0, vuNetId: 1 }
+                { _id: 0, vuNetId: 1 },
             );
             // create a Job document so a background script can pick it up
             const job = new Job({
@@ -89,7 +89,7 @@ const createExercises = async (req, res) => {
                     __dirname,
                     "..",
                     "workers",
-                    "pregenerateExercises.js"
+                    "pregenerateExercises.js",
                 );
                 // Use pm2 to start the script with logs and no auto-restart
                 const pm2Args = [
@@ -106,12 +106,41 @@ const createExercises = async (req, res) => {
                     stdio: "inherit",
                 });
 
-                child.unref();
-        
+                child.on("error", (err) => {
+                    // If pm2 isn't installed (ENOENT), fall back to launching with Node
+                    console.warn(
+                        "pm2 spawn failed, falling back to node run:",
+                        err.message,
+                    );
+                    try {
+                        const nodeChild = spawn(
+                            process.execPath,
+                            [scriptPath, job.uuid],
+                            {
+                                detached: false,
+                                stdio: "inherit",
+                            },
+                        );
+                        nodeChild.on("error", (e) => {
+                            console.error(
+                                "Fallback node spawn failed:",
+                                e.message,
+                            );
+                        });
+                        nodeChild.unref && nodeChild.unref();
+                    } catch (e) {
+                        console.error(
+                            "Failed to spawn fallback node process:",
+                            e.message,
+                        );
+                    }
+                });
+
+                child.unref && child.unref();
             } catch (spawnErr) {
                 console.error(
                     "Failed to spawn pregenerate script:",
-                    spawnErr.message
+                    spawnErr.message,
                 );
                 // do not fail the HTTP request — job will remain pending and can be processed later
             }
@@ -123,7 +152,9 @@ const createExercises = async (req, res) => {
                     "Exercise creation requested. Processing in background.",
             });
         } else {
-            return res.status(400).send({ message: "Assignment ID not found." });
+            return res
+                .status(400)
+                .send({ message: "Assignment ID not found." });
         }
     } catch (err) {
         console.error(err.message);
@@ -141,14 +172,14 @@ const createExercises = async (req, res) => {
  * @param {Object} res - Express response object for sending status messages.
  * @returns {Object} JSON response with success or error message.
  */
-const deleteExercise = async (req, res) => {
-    const id = req.params?.id;
+const deleteExerciseById = async (req, res) => {
+    const exerciseId = req.params?.exerciseId;
 
     try {
-        if (id) {
+        if (exerciseId) {
             const exercise = await Exercise.findOneAndDelete(
-                { uuid: id },
-                { _id: 0 }
+                { uuid: exerciseId },
+                { _id: 0 },
             );
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
@@ -176,14 +207,14 @@ const deleteExercise = async (req, res) => {
  * @param {Object} res - Express response object for sending status messages.
  * @returns {Object} JSON response with success or error message.
  */
-const editExercise = async (req, res) => {
-    const id = req.params?.id;
+const editExerciseById = async (req, res) => {
+    const exerciseId = req.params?.exerciseId;
     try {
-        if (id) {
+        if (exerciseId) {
             const exercise = await Exercise.findOneAndUpdate(
-                { uuid: id },
+                { uuid: exerciseId },
                 req.body,
-                { new: true, _id: 0 }
+                { new: true, _id: 0 },
             );
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
@@ -212,13 +243,13 @@ const editExercise = async (req, res) => {
  * @returns {Object} JSON response with exercise data or error message.
  */
 const getMostRecentExercise = async (req, res) => {
-    const {assignmentId, userId} = req.query;
+    const { assignmentId, userId } = req.query;
     try {
         if (assignmentId && userId) {
             // Find all exercises with this assignmentId (should be one, but just in case)
             const exercises = await Exercise.find(
                 { assignmentId: assignmentId, userId: userId },
-                { _id: 0 }
+                { _id: 0 },
             ).lean();
             if (!exercises || exercises.length === 0) {
                 return res.status(404).send({ message: "Exercise not found." });
@@ -306,8 +337,12 @@ const getAllExercises = async (req, res) => {
                 uniqueMap.set(key, exercise);
             } else {
                 const existing = uniqueMap.get(key);
-                const existingTime = existing.createdTimestamp ? new Date(existing.createdTimestamp).getTime() : 0;
-                const currTime = exercise.createdTimestamp ? new Date(exercise.createdTimestamp).getTime() : 0;
+                const existingTime = existing.createdTimestamp
+                    ? new Date(existing.createdTimestamp).getTime()
+                    : 0;
+                const currTime = exercise.createdTimestamp
+                    ? new Date(exercise.createdTimestamp).getTime()
+                    : 0;
                 if (currTime > existingTime) {
                     uniqueMap.set(key, exercise);
                 }
@@ -379,7 +414,7 @@ const downloadExercises = async (req, res) => {
  * @returns {Object} JSON response with success or error message.
  */
 const submitRatings = async (req, res) => {
-    const exerciseId = req.params?.id;
+    const exerciseId = req.params?.exerciseId;
     const { questionId, ratings } = req.body;
 
     try {
@@ -402,7 +437,10 @@ const submitRatings = async (req, res) => {
         } else {
             question.ratings = ratings;
         }
-
+        question.status = "completed";
+        exercise.completedQuestions = exercise.questions.filter(
+            (q) => q.status === "completed",
+        ).length;
         await exercise.save();
 
         return res
@@ -426,19 +464,19 @@ const submitRatings = async (req, res) => {
  * @returns {Object} JSON response with result or error message.
  */
 const checkQuestion = async (req, res) => {
-    const id = req.params?.id; // exercise id
+    const exerciseId = req.params?.exerciseId;
     const { questionId } = req.query;
     const { userAnswer, timeSpent } = req.body;
     console.log(req.body);
     try {
-        if (id) {
-            const exercise = await Exercise.findOne({ uuid: id });
+        if (exerciseId) {
+            const exercise = await Exercise.findOne({ uuid: exerciseId });
             if (!exercise) {
                 return res.status(404).send({ message: "Exercise not found." });
             }
 
             const question = exercise.questions.find(
-                (question) => questionId === question.uuid
+                (question) => questionId === question.uuid,
             );
             if (!question) {
                 return res.status(404).send({ message: "Question not found." });
@@ -447,24 +485,17 @@ const checkQuestion = async (req, res) => {
             const result = userAnswer === question.correctAnswer;
 
             if (result) {
-                exercise.completedQuestions += 1;
-
+                question.status = "correct-attempted";
                 // increment if this is the user's first attempt
                 if (question.userAnswers.length === 0) {
                     exercise.totalCorrect += 1;
                     question.correct = true;
                 }
-
+                exercise.status = "In Progress";
                 exercise.totalTimeSpent += timeSpent;
-
-                if (exercise.completedQuestions === exercise.questions.length) {
-                    exercise.status = "Complete";
-                    exercise.completedTimestamp = new Date();
-                } else {
-                    exercise.status = "In Progress";
-                }
             } else {
                 question.correct = false;
+                question.status = "incorrect-attempted";
             }
 
             question.timeSpent = timeSpent;
@@ -482,7 +513,7 @@ const checkQuestion = async (req, res) => {
 
             return res.status(200).json({ result });
         } else {
-            return res.status(400).send({ message: "Missing Question ID." });
+            return res.status(400).send({ message: "Missing Exercise ID." });
         }
     } catch (err) {
         console.error(err.message);
@@ -619,7 +650,7 @@ const getAverageScoreDistribution = async (req, res) => {
                     userId: userId,
                     status: "Complete",
                 },
-                { _id: 0 }
+                { _id: 0 },
             );
             for (const exercise of userExercises) {
                 const score =
@@ -648,7 +679,7 @@ const getAverageScoreDistribution = async (req, res) => {
                         userId: user.vuNetId,
                         status: "Complete",
                     },
-                    { _id: 0 }
+                    { _id: 0 },
                 );
                 if (userExercises.length > 0) {
                     const average =
@@ -669,11 +700,11 @@ const getAverageScoreDistribution = async (req, res) => {
                     else if (average <= 100) range = "90-100";
                     else
                         throw new Error(
-                            "Unnatural average calculated: " + average
+                            "Unnatural average calculated: " + average,
                         );
 
                     const resultItem = results.find(
-                        (r) => r.percentage === range
+                        (r) => r.percentage === range,
                     );
                     if (resultItem) {
                         resultItem.data += 1;
@@ -716,13 +747,13 @@ const getRecentActivity = async (req, res) => {
         for (const exercise of exercises) {
             const user = await User.findOne(
                 { vuNetId: exercise.userId },
-                { _id: 0 }
+                { _id: 0 },
             );
             const assignment = await Assignment.findOne(
                 {
                     uuid: exercise.assignmentId,
                 },
-                { _id: 0 }
+                { _id: 0 },
             );
             const dateTimestamp = new Date(exercise.completedTimestamp);
             const now = new Date();
@@ -731,12 +762,12 @@ const getRecentActivity = async (req, res) => {
             const today = new Date(
                 now.getFullYear(),
                 now.getMonth(),
-                now.getDate()
+                now.getDate(),
             );
             const givenDate = new Date(
                 dateTimestamp.getFullYear(),
                 dateTimestamp.getMonth(),
-                dateTimestamp.getDate()
+                dateTimestamp.getDate(),
             );
 
             // Calculate day difference
@@ -787,8 +818,8 @@ const getRecentActivity = async (req, res) => {
 module.exports = {
     regenerateExercise,
     createExercises,
-    deleteExercise,
-    editExercise,
+    deleteExerciseById,
+    editExerciseById,
     getMostRecentExercise,
     getAllExercises,
     downloadExercises,

@@ -19,13 +19,17 @@ const { ObjectId } = mongoose.Types;
  */
 const createUser = async (req, res) => {
     try {
-        // from vusso
-        const email = req.headers["remote-user"];
-        const firstName = req.headers["remote-user-given-name"];
-        const lastName = req.headers["remote-user-family-name"];
-        const vuNetId = req.headers["remote-user-vunetid"];
-        const role = req.body.role || "student";
-        const studyGroup = Math.floor(Math.random() * 2) == 1 ? "A" : "B";
+        // Identity can come from the BYPASS_AUTH middleware (`req.user`),
+        // from the proxy-set headers, or from the request body (for tests).
+        const src = req.user || {};
+        const email = src.email || req.headers["remote-user"] || req.body.email;
+        const firstName = src.firstName || req.headers["remote-user-given-name"] || req.body.firstName;
+        const lastName = src.lastName || req.headers["remote-user-family-name"] || req.body.lastName;
+        const vuNetId = src.vuNetId || req.headers["remote-user-vunetid"] || req.body.vuNetId || req.body.vunetid;
+        const role = req.body.role || src.role || "student";
+        const studyGroup = src.studyGroup || (Math.floor(Math.random() * 2) == 1 ? "A" : "B");
+
+        console.log("createUser inputs:", { email, firstName, lastName, vuNetId, role });
         if (firstName && lastName && vuNetId && email && role) {
             let user = await User.findOne({ vuNetId }, { _id: 0 });
             if (!user) {
@@ -63,12 +67,12 @@ const createUser = async (req, res) => {
  * @param {Object} res - Express response object for sending status messages.
  * @returns {Object} JSON response with success or error message.
  */
-const deleteUser = async (req, res) => {
-    const id = req.params?.id;
+const deleteUserById = async (req, res) => {
+    const userId = req.params?.userId;
 
     try {
-        if (id) {
-            const user = await User.findOneAndDelete({ uuid: id }, { _id: 0 });
+        if (userId) {
+            const user = await User.findOneAndDelete({ vuNetId: userId }, { _id: 0 });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -94,12 +98,12 @@ const deleteUser = async (req, res) => {
  * @param {Object} res - Express response object for sending updated user data or error status.
  * @returns {Object} JSON response with updated user data or error message.
  */
-const editUser = async (req, res) => {
-    const id = req.params?.id;
+const editUserById = async (req, res) => {
+    const userId = req.params?.userId;
     try {
-        if (id) {
+        if (userId) {
             const user = await User.findOneAndUpdate(
-                { vuNetId: id },
+                { vuNetId: userId },
                 req.body,
                 { new: true, _id: 0 }
             );
@@ -114,7 +118,8 @@ const editUser = async (req, res) => {
         console.error(err.message);
         return res.status(500).send({ message: "Issue with updating user." });
     }
-};
+};  
+   
 
 /**
  * Retrieves a user from the database by their vuNetId.
@@ -123,11 +128,11 @@ const editUser = async (req, res) => {
  * @param {Object} res - Express response object for sending user data or error status.
  * @returns {Object} JSON response with user data or error message.
  */
-const getUser = async (req, res) => {
-    const id = req.params?.id;
+const getUserById = async (req, res) => {
+    const userId = req.params?.userId;
     try {
-        if (id) {
-            const user = await User.findOne({ vuNetId: id }, { _id: 0 });
+        if (userId) {
+            const user = await User.findOne({ vuNetId: userId }, { _id: 0 });
             if (!user) {
                 return res.status(404).send({ message: "User not found." });
             }
@@ -271,9 +276,9 @@ const uploadUsers = async (req, res) => {
 
 module.exports = {
     createUser,
-    deleteUser,
-    editUser,
-    getUser,
+    deleteUserById,
+    editUserById,
+    getUserById,
     getAllUsers,
     downloadUsers,
     uploadUsers,

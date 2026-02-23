@@ -56,6 +56,11 @@ const QuestionSchema = new Schema({
         type: Number, // total amount of time spent in seconds on the question
         required: true,
     },
+    status: {
+        type: String, // status indicators for the user
+        required: true,
+        enum: ["not-attempted", "incorrect-attempted", "correct-attempted", "completed"],
+    },
     correct: {
         type: Boolean, // whether the user got the answer correct the first time
     },

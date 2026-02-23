@@ -11,25 +11,16 @@ const { ObjectId } = mongoose.Types;
  * @returns {Object} JSON response with assignment data or error message.
  */
 const createAssignment = async (req, res) => {
-    const { chapterId, title, identifier, instructions, startDate, dueDate } =
+    const { chapterId, title, identifier, startDate, dueDate } =
         req.body;
     try {
-        if (
-            chapterId &&
-            title &&
-            identifier &&
-            instructions &&
-            startDate &&
-            dueDate
-        ) {
+        if (chapterId && title && identifier && startDate && dueDate) {
             const assignment = new Assignment({
                 _id: new ObjectId(),
                 uuid: crypto.randomUUID(),
                 chapterId,
                 title,
                 identifier,
-                instructions,
-                startDate,
                 dueDate,
             });
             await assignment.save();
@@ -55,14 +46,17 @@ const createAssignment = async (req, res) => {
  * @param {Object} res - Express response object for sending status messages.
  * @returns {Object} JSON response with success or error message.
  */
-const deleteAssignment = async (req, res) => {
-    const id = req.params?.id;
+const deleteAssignmentById = async (req, res) => {
+    const assignmentId = req.params?.assignmentId;
 
     try {
-        if (id) {
-            const assignment = await Assignment.findOneAndDelete({
-                uuid: id,
-            }, { _id: 0 });
+        if (assignmentId) {
+            const assignment = await Assignment.findOneAndDelete(
+                {
+                    uuid: assignmentId,
+                },
+                { _id: 0 },
+            );
 
             if (!assignment) {
                 return res
@@ -92,15 +86,15 @@ const deleteAssignment = async (req, res) => {
  * @param {Object} res - Express response object for sending updated assignment data or error status.
  * @returns {Object} JSON response with updated assignment data or error message.
  */
-const editAssignment = async (req, res) => {
-    const uuid = req.params?.uuid;
+const editAssignmentById = async (req, res) => {
+    const assignmentId = req.params?.assignmentId;
 
     try {
-        if (uuid) {
+        if (assignmentId) {
             const assignment = await Assignment.findOneAndUpdate(
-                { uuid },
+                { uuid: assignmentId },
                 req.body,
-                { new: true, _id: 0 }
+                { new: true, _id: 0 },
             );
 
             if (!assignment) {
@@ -126,14 +120,17 @@ const editAssignment = async (req, res) => {
  * @param {Object} res - Express response object for sending assignment data or error status.
  * @returns {Object} JSON response with assignment data or error message.
  */
-const getAssignment = async (req, res) => {
-    const id = req.params?.id;
+const getAssignmentById = async (req, res) => {
+    const assignmentId = req.params?.assignmentId;
 
     try {
-        if (id) {
-            const assignment = await Assignment.findOne({
-                uuid: id,
-            }, { _id: 0 });
+        if (assignmentId) {
+            const assignment = await Assignment.findOne(
+                {
+                    uuid: assignmentId,
+                },
+                { _id: 0 },
+            );
             if (!assignment) {
                 return res
                     .status(404)
@@ -160,16 +157,11 @@ const getAssignment = async (req, res) => {
  * @returns {Array} JSON array of assignment objects or error message.
  */
 const getAllAssignments = async (req, res) => {
-    const { chapterId, date } = req.query;
+    const { chapterId } = req.query;
     try {
         let filter = {};
         if (chapterId) {
             filter.chapterId = chapterId;
-        }
-
-        if (date) {
-            filter.startDate = { $lte: new Date(date) };
-            filter.dueDate = { $gte: new Date(date) };
         }
 
         const assignments = await Assignment.find(filter, { _id: 0 });
@@ -182,8 +174,8 @@ const getAllAssignments = async (req, res) => {
 
 module.exports = {
     createAssignment,
-    deleteAssignment,
-    editAssignment,
-    getAssignment,
+    deleteAssignmentById,
+    editAssignmentById,
+    getAssignmentById,
     getAllAssignments,
 };

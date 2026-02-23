@@ -16,10 +16,6 @@ const ChapterSchema = new Schema({
         type: Number,
         required: true, // Chapter 1 vs. Chapter 2 etc
     },
-    learningObjectives: [{
-        type: String, // list of learning objectives based on CS1101
-        required: true
-    }],
     title: {
         type: String,
         required: true // a recognizable title (ex. Introduction to Methods)
@@ -27,8 +23,8 @@ const ChapterSchema = new Schema({
     description: {
         type: String, // general description informing what the chapter is about
     },
-    releaseDate: {
-        type: Date,
+    released: {
+        type: Boolean,
         required: true // when the chapter should appear in the students' pages
     },
     requestFeedback: {

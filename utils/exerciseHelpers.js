@@ -1,7 +1,6 @@
 // Used for exercise.controllers.js
 const User = require("../models/User.js");
-const { doesSubmissionFolderExist } = require("./studentSubmission.js");
-const { checkStudentScore } = require("./studentSubmission.js");
+const studentSubmission = require("./studentSubmission.js");
 
 /**
  * Filters a question object to remove sensitive information and randomize answer order.
@@ -25,8 +24,11 @@ const filterQuestion = (question) => {
         topics: question.topics,
         explanation: question.explanation,
         availableAnswers,
+        // include ratings; normalize Map to plain object for JSON transport
+        ratings: question.ratings instanceof Map ? Object.fromEntries(question.ratings) : question.ratings,
         userAnswers: question.userAnswers,
         timeSpent: question.timeSpent,
+        status: question.status,
         correct: question.correct,
     };
     return filteredQuestion;
@@ -40,14 +42,16 @@ const filterQuestion = (question) => {
  * @returns {boolean} True if the submission exists and meets the score threshold, false otherwise.
  */
 const validSubmission = async (author, assignment) => {
-    const hasSubmission = await doesSubmissionFolderExist(
+    // Only check in the correct group folder for this author
+    const hasSubmission = await studentSubmission.doesSubmissionFolderExist(
         assignment.identifier,
-        author.email
+        author.email,
+        author.studyParticipation
     );
 
-    const validStudentScore = await checkStudentScore(
+    const validStudentScore = await studentSubmission.checkStudentScore(
         assignment.identifier,
-        author.email
+        author.email,
     );
 
     return hasSubmission && validStudentScore;
@@ -61,9 +65,9 @@ const validSubmission = async (author, assignment) => {
  */
 const shuffleCandidates = (candidates) => {
     const result = [...candidates];
-    for (let i = candidates.length - 1; i > 0; i--) {
+    for (let i = result.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        [result[i], result[j]] = [result[j], result[i]];
     }
     return result;
 };
@@ -78,7 +82,7 @@ const shuffleCandidates = (candidates) => {
  * @returns {Object|null} The author user object with a valid submission, or null if none found.
  */
 const findAuthor = async (user, assignment) => {
-    let author;
+    let author = null;
     const users = await User.find(
         {
             role: "student",
@@ -87,35 +91,64 @@ const findAuthor = async (user, assignment) => {
         { _id: 0 }
     );
     const candidates = shuffleCandidates(users);
-    console.log("candidates", candidates.map((c) => c.vuNetId).join(", "));
-    // study group A is self, study group B is others
+
+    // Helper to check valid submission in a specific group
+    const validSubmissionInGroup = async (candidate, group) => {
+        return await validSubmission({
+            ...candidate,
+            studyParticipation: group,
+        }, assignment);
+    };
+
+    // Selection policy:
+    // - If user.studyGroup === 'A': prefer the user's own submission first;
+    //   if none, consider other students (shuffled) and pick the first valid.
+    // - If user.studyGroup === 'B': consider other students first (shuffled);
+    //   if none valid, fall back to the user's own submission.
+    const shuffled = shuffleCandidates(users);
+
+    // Partition candidates by studyParticipation so we can enforce the rule:
+    // participants (studyParticipation: true) must only consider other participants.
+    const samePart = shuffled.filter((c) => c.studyParticipation === user.studyParticipation);
+    const otherPart = shuffled.filter((c) => c.studyParticipation !== user.studyParticipation);
+
+    const tryCandidates = async (list) => {
+        for (const candidate of list) {
+            if (candidate.email === user.email) continue;
+            if (await validSubmission(candidate, assignment)) {
+                return candidate;
+            }
+        }
+        return null;
+    };
+
     if (user.studyGroup === "A") {
-        author = user;
-        if (!(await validSubmission(author, assignment))) {
-            // try to find a submission from other participants (random order)
-            for (const candidate of candidates) {
-                if (await validSubmission(candidate, assignment)) {
-                    author = candidate;
-                    break;
-                }
+        // A: prefer own submission first
+        if (await validSubmission(user, assignment)) {
+            author = user;
+        } else {
+            // For participants, only consider same-participation candidates
+            author = await tryCandidates(samePart);
+            // If no author found and user is non-participant, allow other-participation fallback
+            if (!author && user.studyParticipation === false) {
+                author = await tryCandidates(otherPart);
             }
         }
     } else {
-        // First, try to find a submission from other participants (random order)
-        for (const candidate of candidates) {
-            if (await validSubmission(candidate, assignment)) {
-                author = candidate;
-                break;
-            }
+        // B: prefer others first
+        // For participants, only consider same-participation candidates
+        author = await tryCandidates(samePart);
+        // If none and user is non-participant, consider other-participation candidates
+        if (!author && user.studyParticipation === false) {
+            author = await tryCandidates(otherPart);
         }
-
-        // If no other participant had a submission, finally try the current user as a fallback
-        if (!author) {
-            if (await validSubmission(user, assignment)) {
-                author = user;
-            }
+        // Finally, fall back to user's own submission
+        if (!author && await validSubmission(user, assignment)) {
+            author = user;
         }
     }
+
+    console.log("findAuthor result:", { requester: user.vuNetId, studyGroup: user.studyGroup, studyParticipation: user.studyParticipation, author: author ? author.vuNetId : null });
     return author;
 };
 

@@ -6,6 +6,6 @@ const {
     getJobByAssignment,
 } = require("../controllers/jobs.controller.js");
 
-router.get("/:id", authenticate, requireRole(["admin", "faculty"]), getJobStatus);
+router.get("/:jobId", authenticate, requireRole(["admin", "faculty"]), getJobStatus);
 router.get("/by-assignment/:assignmentId", authenticate, getJobByAssignment);
 module.exports = router;

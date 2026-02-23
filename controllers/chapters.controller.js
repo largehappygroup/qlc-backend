@@ -15,15 +15,14 @@ const { ObjectId } = mongoose.Types;
 const createChapter = async (req, res) => {
     const {
         assignments,
-        learningObjectives,
         title,
+        released,
         description,
-        releaseDate,
         requestFeedback,
     } = req.body;
 
     try {
-        if (learningObjectives && title && description && releaseDate) {
+        if (title && description) {
             const order =
                 (await Chapter.countDocuments({}, { hint: "_id_" })) + 1;
 
@@ -31,10 +30,9 @@ const createChapter = async (req, res) => {
                 _id: new ObjectId(),
                 uuid: crypto.randomUUID(),
                 order,
-                learningObjectives,
                 title,
                 description,
-                releaseDate,
+                released: released || false,
                 requestFeedback,
             });
 
@@ -72,13 +70,13 @@ const createChapter = async (req, res) => {
  * @param {Object} res - Express response object for sending status messages.
  * @returns {Object} JSON response with success or error message.
  */
-const deleteChapter = async (req, res) => {
-    const id = req.params?.id;
+const deleteChapterById = async (req, res) => {
+    const chapterId = req.params?.chapterId;
 
     try {
-        if (id) {
+        if (chapterId) {
             const chapter = await Chapter.findOneAndDelete(
-                { uuid: id },
+                { uuid: chapterId },
                 { _id: 0 }
             );
 
@@ -87,7 +85,7 @@ const deleteChapter = async (req, res) => {
             }
 
             const assignments = await Assignment.find(
-                { chapterId: id },
+                { chapterId },
                 { _id: 0 }
             );
             for (const assignment of assignments) {
@@ -137,31 +135,29 @@ const deleteChapter = async (req, res) => {
  * @param {Object} res - Express response object for sending updated chapter data or error status.
  * @returns {Object} JSON response with updated chapter data or error message.
  */
-const editChapter = async (req, res) => {
-    const id = req.params?.id;
+const editChapterById = async (req, res) => {
+    const chapterId = req.params?.chapterId;
     const {
         title,
         order,
         assignments,
-        learningObjectives,
         description,
-        releaseDate,
+        released,
         requestFeedback,
     } = req.body;
 
     try {
-        if (id) {
-            const chapter = await Chapter.findOne({ uuid: id });
+        if (chapterId) {
+            const chapter = await Chapter.findOne({ uuid: chapterId });
 
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
             }
 
             chapter.title = title;
-            chapter.learningObjectives = learningObjectives;
             chapter.order = order;
             chapter.description = description;
-            chapter.releaseDate = new Date(releaseDate);
+            chapter.released = released || false;
             chapter.requestFeedback = requestFeedback;
 
             if (assignments) {
@@ -170,7 +166,7 @@ const editChapter = async (req, res) => {
                     .map((assignment) => assignment.uuid);
 
                 const existingAssignments = await Assignment.find({
-                    chapterId: id,
+                    chapterId: chapterId,
                 });
                 // 1. Delete removed assignments
                 const toDelete = existingAssignments.filter(
@@ -195,7 +191,7 @@ const editChapter = async (req, res) => {
                             ...a,
 
                             uuid: crypto.randomUUID(),
-                            chapterId: id,
+                            chapterId: chapterId,
                         });
                         await newA.save();
                     }
@@ -205,7 +201,7 @@ const editChapter = async (req, res) => {
             await chapter.save();
 
             const updatedChapter = await Chapter.findOne(
-                { uuid: id },
+                { uuid: chapterId },
                 { _id: 0 }
             );
 
@@ -259,12 +255,12 @@ const editAllChapters = async (req, res) => {
  * @param {Object} res - Express response object for sending chapter data or error status.
  * @returns {Object} JSON response with chapter data or error message.
  */
-const getChapter = async (req, res) => {
-    const id = req.params?.id;
+const getChapterById = async (req, res) => {
+    const chapterId = req.params?.chapterId;
 
     try {
-        if (id) {
-            const chapter = await Chapter.findOne({ uuid: id }, { _id: 0 });
+        if (chapterId) {
+            const chapter = await Chapter.findOne({ uuid: chapterId }, { _id: 0 });
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
             }
@@ -281,25 +277,24 @@ const getChapter = async (req, res) => {
 };
 
 /**
- * Retrieves all chapters from the database, optionally filtered by order or release date.
+ * Retrieves all chapters from the database, optionally filtered by order or release status.
  * Returns an array of chapter objects sorted by order, or an error message if retrieval fails.
- * @param {Object} req - Express request object with optional order and date query parameters.
+ * @param {Object} req - Express request object with optional order and released query parameters.
  * @param {Object} res - Express response object for sending chapter data or error status.
  * @returns {Array} JSON array of chapter objects or error message.
  */
 const getAllChapters = async (req, res) => {
-    const { order, date } = req.query;
+    const { order, released } = req.query;
     try {
         let filter = {};
         if (order) {
             filter.order = Number(order);
         }
 
-        if (date) {
-            filter.releaseDate = {
-                $lt: new Date(date),
-            };
+        if (released !== undefined) {
+            filter.released = released === "true";
         }
+
         const chapters = await Chapter.find(filter, { _id: 0 }).sort({
             order: 1,
         });
@@ -312,9 +307,9 @@ const getAllChapters = async (req, res) => {
 
 module.exports = {
     createChapter,
-    deleteChapter,
-    editChapter,
-    getChapter,
+    deleteChapterById,
+    editChapterById,
+    getChapterById,
     getAllChapters,
     editAllChapters,
 };

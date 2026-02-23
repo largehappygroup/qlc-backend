@@ -20,12 +20,19 @@ app.use(express.json());
 
 connectDB();
 
+// Support both host-specific double-slash mounts and standard single-slash mounts.
 app.use("//feedback", require("./routes/feedback.router.js"));
+app.use("/feedback", require("./routes/feedback.router.js"));
 app.use("//assignments", require("./routes/assignments.router.js"));
+app.use("/assignments", require("./routes/assignments.router.js"));
 app.use("//chapters", require("./routes/chapters.router.js"));
+app.use("/chapters", require("./routes/chapters.router.js"));
 app.use("//exercises", require("./routes/exercises.router.js"));
+app.use("/exercises", require("./routes/exercises.router.js"));
 app.use("//users", require("./routes/users.router.js"));
+app.use("/users", require("./routes/users.router.js"));
 app.use("//jobs", require("./routes/jobs.router.js"));
+app.use("/jobs", require("./routes/jobs.router.js"));
 app.get("/", (req, res) => {
     res.send(`Hello :D`);
 });
