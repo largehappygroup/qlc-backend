@@ -8,7 +8,7 @@
     "dependencies": {
         "@json2csv/transforms": "^7.0.6",
         "@types/multer": "^2.0.0",
-        "axios": "^1.8.2",
+        "axios": "^1.13.5",
         "cors": "^2.8.5",
         "csv": "^6.4.1",
         "csv-parser": "^3.2.0",
