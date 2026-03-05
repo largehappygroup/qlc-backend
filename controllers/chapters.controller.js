@@ -3,6 +3,11 @@ const Assignment = require("../models/Assignment.js");
 const crypto = require("crypto");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
+const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
+dayjs.extend(utc);
+dayjs.extend(timezone);
 /**
  * Creates a new chapter for a course with specified details and assignments.
  * Validates required fields, assigns chapter order, and saves the chapter to the database.
@@ -38,8 +43,19 @@ const createChapter = async (req, res) => {
 
             if (assignments) {
                 for (const assignment of assignments) {
+                    let dueDateUtc = assignment.dueDate;
+                    if (dueDateUtc) {
+                        let dateStr;
+                        if (typeof dueDateUtc === "string") {
+                            dateStr = dueDateUtc.split("T")[0];
+                        } else {
+                            dateStr = dayjs(dueDateUtc).format("YYYY-MM-DD");
+                        }
+                        dueDateUtc = dayjs.tz(dateStr + " 23:59:59", "YYYY-MM-DD HH:mm:ss", "America/Chicago").utc().toDate();
+                    }
                     const newAssignment = new Assignment({
                         ...assignment,
+                        dueDate: dueDateUtc,
                         _id: new ObjectId(),
                         uuid: crypto.randomUUID(),
                         chapterId: chapter.uuid,
@@ -181,15 +197,28 @@ const editChapterById = async (req, res) => {
 
                 // 2. Process new and updated assignments
                 for (const a of assignments) {
+                    let dueDateUtc = a.dueDate;
+                    if (dueDateUtc) {
+                        let dateStr;
+                        if (typeof dueDateUtc === "string") {
+                            dateStr = dueDateUtc.split("T")[0];
+                        } else {
+                            dateStr = dayjs(dueDateUtc).format("YYYY-MM-DD");
+                        }
+                        dueDateUtc = dayjs.tz(dateStr + " 23:59:59", "YYYY-MM-DD HH:mm:ss", "America/Chicago").utc().toDate();
+                    }
                     if (a.uuid) {
                         // Update existing assignment
-                        await Assignment.findOneAndUpdate({ uuid: a.uuid }, a);
+                        await Assignment.findOneAndUpdate(
+                            { uuid: a.uuid },
+                            { ...a, dueDate: dueDateUtc }
+                        );
                     } else {
                         // Create new assignment
                         const newA = new Assignment({
                             _id: new ObjectId(),
                             ...a,
-
+                            dueDate: dueDateUtc,
                             uuid: crypto.randomUUID(),
                             chapterId: chapterId,
                         });

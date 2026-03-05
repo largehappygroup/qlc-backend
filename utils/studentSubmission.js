@@ -197,9 +197,22 @@ const getSubmission = async (
     );
     if (files.length === 0) return "";
 
+    // Helper to strip all comments from Java code
+    function stripJavaComments(code) {
+        // Remove multiline comments (including Javadoc)
+        code = code.replace(/\/\*[\s\S]*?\*\//g, "");
+        // Remove inline comments (// ...), but keep code before //
+        code = code.replace(/(^|[^:"'])\s*\/\/.*$/gm, (line) => {
+            const idx = line.indexOf("//");
+            if (idx > 0) return line.slice(0, idx).replace(/\s+$/, "");
+            return "";
+        });
+        return code;
+    }
+
     // join files with clear separators so the consumer can see file boundaries
     return files
-        .map((f) => `// ===== File: ${f.filename} =====\n${f.content.trim()}\n`)
+        .map((f) => `// ===== File: ${f.filename} =====\n${stripJavaComments(f.content.trim())}\n`)
         .join("\n");
 };
 

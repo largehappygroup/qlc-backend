@@ -483,7 +483,7 @@ const checkQuestion = async (req, res) => {
             }
 
             const result = userAnswer === question.correctAnswer;
-
+            let reason;
             if (result) {
                 question.status = "correct-attempted";
                 // increment if this is the user's first attempt
@@ -493,7 +493,21 @@ const checkQuestion = async (req, res) => {
                 }
                 exercise.status = "In Progress";
                 exercise.totalTimeSpent += timeSpent;
+                reason = question.explanation;
             } else {
+                
+                console.log(question.otherAnswers);
+                console.log(question.otherAnswers.includes(userAnswer));
+                const answerIndex = question.otherAnswers.findIndex(
+                    (a) => a === userAnswer,
+                );
+                if (answerIndex !== -1) {
+                    reason = question.hints[answerIndex];
+                } else {
+                    throw new Error(
+                        "User answer not found in available answers for question",
+                    );
+                }
                 question.correct = false;
                 question.status = "incorrect-attempted";
             }
@@ -511,7 +525,7 @@ const checkQuestion = async (req, res) => {
 
             await exercise.save();
 
-            return res.status(200).json({ result });
+            return res.status(200).json({ result, reason });
         } else {
             return res.status(400).send({ message: "Missing Exercise ID." });
         }

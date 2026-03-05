@@ -2,6 +2,12 @@ const Assignment = require("../models/Assignment.js");
 const crypto = require("crypto");
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
+const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 /**
  * Creates a new assignment for a chapter.
  * Validates required fields and saves the assignment to the database.
@@ -11,8 +17,26 @@ const { ObjectId } = mongoose.Types;
  * @returns {Object} JSON response with assignment data or error message.
  */
 const createAssignment = async (req, res) => {
-    const { chapterId, title, identifier, startDate, dueDate } =
-        req.body;
+    const { chapterId, title, identifier, startDate, dueDate } = req.body;
+    // Convert dueDate to 11:59:59 PM Central Time and store as UTC
+    let dueDateUtc = dueDate;
+    if (dueDate) {
+        // Always treat input as date-only (ignore time part and timezone)
+        let dateStr;
+        if (typeof dueDate === "string") {
+            // Remove time and timezone if present
+            dateStr = dueDate.split("T")[0];
+        } else {
+            dateStr = dayjs(dueDate).format("YYYY-MM-DD");
+        }
+        const centralEnd = dayjs.tz(dateStr + " 23:59:59", "YYYY-MM-DD HH:mm:ss", "America/Chicago");
+        dueDateUtc = centralEnd.utc().toDate();
+        // Debug logging
+        console.log("[Assignment] dueDate input:", dueDate);
+        console.log("[Assignment] parsed date string:", dateStr);
+        console.log("[Assignment] Central 23:59:59:", centralEnd.format());
+        console.log("[Assignment] UTC stored:", dueDateUtc);
+    }
     try {
         if (chapterId && title && identifier && startDate && dueDate) {
             const assignment = new Assignment({
@@ -21,7 +45,7 @@ const createAssignment = async (req, res) => {
                 chapterId,
                 title,
                 identifier,
-                dueDate,
+                dueDate: dueDateUtc,
             });
             await assignment.save();
 
@@ -91,9 +115,25 @@ const editAssignmentById = async (req, res) => {
 
     try {
         if (assignmentId) {
+            let update = req.body;
+            if (update.dueDate) {
+                let dateStr;
+                if (typeof update.dueDate === "string") {
+                    dateStr = update.dueDate.split("T")[0];
+                } else {
+                    dateStr = dayjs(update.dueDate).format("YYYY-MM-DD");
+                }
+                const centralEnd = dayjs.tz(dateStr + " 23:59:59", "YYYY-MM-DD HH:mm:ss", "America/Chicago");
+                update.dueDate = centralEnd.utc().toDate();
+                // Debug logging
+                console.log("[Assignment-EDIT] dueDate input:", update.dueDate);
+                console.log("[Assignment-EDIT] parsed date string:", dateStr);
+                console.log("[Assignment-EDIT] Central 23:59:59:", centralEnd.format());
+                console.log("[Assignment-EDIT] UTC stored:", update.dueDate);
+            }
             const assignment = await Assignment.findOneAndUpdate(
                 { uuid: assignmentId },
-                req.body,
+                update,
                 { new: true, _id: 0 },
             );
 
