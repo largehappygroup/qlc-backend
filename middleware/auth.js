@@ -30,7 +30,6 @@ const authenticate = (req, res, next) => {
             studyParticipation: true,
             studyGroup: "A",
         };
-        console.log("BYPASS_AUTH active — set mock headers and req.user");
         return next();
     }
     const vuNetId = req.headers["remote-user-vunetid"];

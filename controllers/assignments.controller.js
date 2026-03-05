@@ -197,11 +197,17 @@ const getAssignmentById = async (req, res) => {
  * @returns {Array} JSON array of assignment objects or error message.
  */
 const getAllAssignments = async (req, res) => {
-    const { chapterId } = req.query;
+    const { chapterId, dueDate } = req.query;
     try {
         let filter = {};
         if (chapterId) {
             filter.chapterId = chapterId;
+        }
+
+        if (dueDate) {
+            // Filter for assignments that are active on the given date
+            const date = dayjs(dueDate);
+            filter.dueDate = { $gte: date.toDate() };
         }
 
         const assignments = await Assignment.find(filter, { _id: 0 });

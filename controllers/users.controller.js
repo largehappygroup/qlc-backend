@@ -29,7 +29,6 @@ const createUser = async (req, res) => {
         const role = req.body.role || src.role || "student";
         const studyGroup = src.studyGroup || (Math.floor(Math.random() * 2) == 1 ? "A" : "B");
 
-        console.log("createUser inputs:", { email, firstName, lastName, vuNetId, role });
         if (firstName && lastName && vuNetId && email && role) {
             let user = await User.findOne({ vuNetId }, { _id: 0 });
             if (!user) {
