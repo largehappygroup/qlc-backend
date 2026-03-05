@@ -12,14 +12,14 @@ const authenticate = (req, res, next) => {
         // Mock user for local development
         // Ensure downstream code that reads VUSSO headers can find them
         // asmith2@university.edu, devuser for student, jdoe1@university.edu for faculty
-        req.headers["remote-user"] = req.headers["remote-user"] || "jdoe1@university.edu";
+        req.headers["remote-user"] = req.headers["remote-user"] || "asmith2@university.edu";
         // Alice, Dev for student, John for faculty
-        req.headers["remote-user-given-name"] = req.headers["remote-user-given-name"] || "John";
+        req.headers["remote-user-given-name"] = req.headers["remote-user-given-name"] || "Alice";
         // Smith, User for student, Doe for faculty
-        req.headers["remote-user-family-name"] = req.headers["remote-user-family-name"] || "jdoe1";
+        req.headers["remote-user-family-name"] = req.headers["remote-user-family-name"] || "Smith";
         // asmith2, devuser for student, jdoe1 for faculty
 
-        req.headers["remote-user-vunetid"] = req.headers["remote-user-vunetid"] || "jdoe1";
+        req.headers["remote-user-vunetid"] = req.headers["remote-user-vunetid"] || "asmith2";
 
         req.user = {
             vuNetId: req.headers["remote-user-vunetid"],

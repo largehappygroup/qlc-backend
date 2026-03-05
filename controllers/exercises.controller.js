@@ -354,7 +354,7 @@ const getAllExercises = async (req, res) => {
         // Only keep the most recent exercise for each userId-assignmentId pair
         exercises = Array.from(uniqueMap.values());
         const vuNetId =
-            req.user.vuNetId ||
+            (req.user && req.user.vuNetId) ||
             req.headers["remote-user-vunetid"] ||
             req.body.vuNetId ||
             req.body.vunetid;
