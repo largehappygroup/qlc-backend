@@ -32,6 +32,8 @@ const regenerateExercise = async (req, res) => {
             const exercise = await generateExercise(userId, assignmentId);
             await exercise.save();
             const returnExercise = exercise.toObject();
+            
+            
             for (let i = 0; i < returnExercise.questions.length; i++) {
                 const question = returnExercise.questions[i];
                 returnExercise.questions[i] = filterQuestion(question);
@@ -351,15 +353,23 @@ const getAllExercises = async (req, res) => {
 
         // Only keep the most recent exercise for each userId-assignmentId pair
         exercises = Array.from(uniqueMap.values());
+        const vuNetId =
+            req.user.vuNetId ||
+            req.headers["remote-user-vunetid"] ||
+            req.body.vuNetId ||
+            req.body.vunetid;
+        const user = await User.findOne({ vuNetId }, { _id: 0 });
 
-        for (let j = 0; j < exercises.length; j++) {
-            const exercise = exercises[j];
-            for (let i = 0; i < exercise.questions.length; i++) {
-                const question = exercise.questions[i];
-                const filteredQuestion = filterQuestion(question);
-                exercises[j].questions[i] = filteredQuestion;
+        if (user?.role === "student") {
+            for (let j = 0; j < exercises.length; j++) {
+                for (let i = 0; i < exercises[j].questions.length; i++) {
+                    const question = exercises[j].questions[i];
+                    const filteredQuestion = filterQuestion(question);
+                    exercises[j].questions[i] = filteredQuestion;
+                }
             }
         }
+
         return res.status(200).json(exercises);
     } catch (err) {
         console.error(err.message);
@@ -495,7 +505,6 @@ const checkQuestion = async (req, res) => {
                 exercise.totalTimeSpent += timeSpent;
                 reason = question.explanation;
             } else {
-                
                 console.log(question.otherAnswers);
                 console.log(question.otherAnswers.includes(userAnswer));
                 const answerIndex = question.otherAnswers.findIndex(

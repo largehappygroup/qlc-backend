@@ -20,9 +20,7 @@ const filterQuestion = (question) => {
         uuid: question.uuid,
         query: question.query,
         type: question.type,
-        hints: question.hints,
         topics: question.topics,
-        explanation: question.explanation,
         availableAnswers,
         // include ratings; normalize Map to plain object for JSON transport
         ratings: question.ratings instanceof Map ? Object.fromEntries(question.ratings) : question.ratings,
