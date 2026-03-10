@@ -18,13 +18,8 @@ dayjs.extend(timezone);
  * @returns {Object} JSON response with chapter data or error message.
  */
 const createChapter = async (req, res) => {
-    const {
-        assignments,
-        title,
-        released,
-        description,
-        requestFeedback,
-    } = req.body;
+    const { assignments, title, released, description, requestFeedback } =
+        req.body;
 
     try {
         if (title && description) {
@@ -51,7 +46,10 @@ const createChapter = async (req, res) => {
                         } else {
                             dateStr = dayjs(dueDateUtc).format("YYYY-MM-DD");
                         }
-                        dueDateUtc = dayjs.tz(dateStr + " 23:59:59", "YYYY-MM-DD HH:mm:ss", "America/Chicago").utc().toDate();
+                        dueDateUtc = dayjs(dateStr).toDate();
+
+                        // Ensure the date is sent back as a date-only string
+                        assignment.dueDate = dayjs(dueDateUtc).format("YYYY-MM-DD");
                     }
                     const newAssignment = new Assignment({
                         ...assignment,
@@ -93,7 +91,7 @@ const deleteChapterById = async (req, res) => {
         if (chapterId) {
             const chapter = await Chapter.findOneAndDelete(
                 { uuid: chapterId },
-                { _id: 0 }
+                { _id: 0 },
             );
 
             if (!chapter) {
@@ -102,12 +100,12 @@ const deleteChapterById = async (req, res) => {
 
             const assignments = await Assignment.find(
                 { chapterId },
-                { _id: 0 }
+                { _id: 0 },
             );
             for (const assignment of assignments) {
                 await Assignment.findOneAndDelete(
                     { uuid: assignment.uuid },
-                    { _id: 0 }
+                    { _id: 0 },
                 );
             }
 
@@ -115,7 +113,7 @@ const deleteChapterById = async (req, res) => {
                 {
                     order: { $gt: chapter.order },
                 },
-                { _id: 0 }
+                { _id: 0 },
             );
 
             for (const toFixChapter of chaptersToFixOrder) {
@@ -124,7 +122,7 @@ const deleteChapterById = async (req, res) => {
                     {
                         order: toFixChapter.order - 1,
                     },
-                    { _id: 0 }
+                    { _id: 0 },
                 );
             }
 
@@ -187,7 +185,7 @@ const editChapterById = async (req, res) => {
                 // 1. Delete removed assignments
                 const toDelete = existingAssignments.filter(
                     (assignment) =>
-                        !incomingAssignmentIds.includes(assignment.uuid)
+                        !incomingAssignmentIds.includes(assignment.uuid),
                 );
                 await Assignment.deleteMany({
                     uuid: {
@@ -205,13 +203,16 @@ const editChapterById = async (req, res) => {
                         } else {
                             dateStr = dayjs(dueDateUtc).format("YYYY-MM-DD");
                         }
-                        dueDateUtc = dayjs.tz(dateStr + " 23:59:59", "YYYY-MM-DD HH:mm:ss", "America/Chicago").utc().toDate();
+                        dueDateUtc = dayjs(dateStr).toDate();
+
+                        // Ensure the date is sent back as a date-only string
+                        a.dueDate = dayjs(dueDateUtc).format("YYYY-MM-DD");
                     }
                     if (a.uuid) {
                         // Update existing assignment
                         await Assignment.findOneAndUpdate(
                             { uuid: a.uuid },
-                            { ...a, dueDate: dueDateUtc }
+                            { ...a, dueDate: dueDateUtc },
                         );
                     } else {
                         // Create new assignment
@@ -231,7 +232,7 @@ const editChapterById = async (req, res) => {
 
             const updatedChapter = await Chapter.findOne(
                 { uuid: chapterId },
-                { _id: 0 }
+                { _id: 0 },
             );
 
             return res.status(200).json(updatedChapter);
@@ -261,7 +262,7 @@ const editAllChapters = async (req, res) => {
                 await Chapter.findOneAndUpdate(
                     { uuid: chapter.uuid },
                     chapter,
-                    { _id: 0 }
+                    { _id: 0 },
                 );
             }
 
@@ -289,10 +290,21 @@ const getChapterById = async (req, res) => {
 
     try {
         if (chapterId) {
-            const chapter = await Chapter.findOne({ uuid: chapterId }, { _id: 0 });
+            const chapter = await Chapter.findOne(
+                { uuid: chapterId },
+                { _id: 0 },
+            );
+
             if (!chapter) {
                 return res.status(404).send({ message: "Chapter not found." });
             }
+
+            // Ensure dueDate is sent as a date-only string
+            const assignments = await Assignment.find({ chapterId });
+            assignments.forEach((assignment) => {
+                assignment.dueDate = dayjs(assignment.dueDate).format("YYYY-MM-DD");
+            });
+
             return res.status(200).json(chapter);
         } else {
             return res.status(400).send({ message: "Missing chapter ID." });

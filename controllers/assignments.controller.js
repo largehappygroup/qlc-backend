@@ -29,7 +29,7 @@ const createAssignment = async (req, res) => {
         } else {
             dateStr = dayjs(dueDate).format("YYYY-MM-DD");
         }
-        const centralEnd = dayjs.tz(dateStr + " 23:59:59", "YYYY-MM-DD HH:mm:ss", "America/Chicago");
+        const centralEnd = dayjs.tz(dateStr, "YYYY-MM-DD", "America/Chicago").endOf('day');
         dueDateUtc = centralEnd.utc().toDate();
         // Debug logging
         console.log("[Assignment] dueDate input:", dueDate);
@@ -123,7 +123,7 @@ const editAssignmentById = async (req, res) => {
                 } else {
                     dateStr = dayjs(update.dueDate).format("YYYY-MM-DD");
                 }
-                const centralEnd = dayjs.tz(dateStr + " 23:59:59", "YYYY-MM-DD HH:mm:ss", "America/Chicago");
+                const centralEnd = dayjs.tz(dateStr, "YYYY-MM-DD", "America/Chicago").endOf('day');
                 update.dueDate = centralEnd.utc().toDate();
                 // Debug logging
                 console.log("[Assignment-EDIT] dueDate input:", update.dueDate);
@@ -205,8 +205,8 @@ const getAllAssignments = async (req, res) => {
         }
 
         if (dueDate) {
-            // Filter for assignments that are active on the given date
-            const date = dayjs(dueDate);
+            // Filter for assignments with dueDate on or after the given date
+            const date = dayjs(dueDate).startOf("day");
             filter.dueDate = { $gte: date.toDate() };
         }
 

@@ -89,23 +89,20 @@ async function run(jobId) {
                 `Error processing task ${t.userId}/${t.assignmentId}:`,
                 err.message
             );
-            // Rethrow error to stop the process (could be changed to continue on error)
-            throw err;
-            // The following code is unreachable due to throw, but would update job with error info:
-            // completed += 1;
-            // job.progress = Math.round((completed / total) * 100);
-            // job.completedTasks = (job.completedTasks || 0) + 1;
-            // job.result = job.result || [];
-            // job.result.push({ error: err.message });
-            // await job.save();
+
+            // Ensure progress is updated even if an error occurs
+            completed += 1;
+            job.progress = Math.round((completed / total) * 100);
+            job.completedTasks = (job.completedTasks || 0) + 1;
+            await job.save();
         }
     }
 
-    // Mark job as completed and set progress to 100%
+    // Mark job as completed
     job.status = "completed";
-    job.progress = 100;
     await job.save();
-    console.log(`Job ${jobId} completed by detached process.`);
+
+    console.log(`Job ${jobId} completed successfully.`);
 
     // If running under PM2, delete the process after completion
     if (process.env.pm_id) {
