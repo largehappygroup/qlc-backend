@@ -3,6 +3,11 @@ const Assignment = require("../models/Assignment.js");
 const User = require("../models/User.js");
 const Chapter = require("../models/Chapter.js");
 const mongoose = require("mongoose");
+const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const { ObjectId } = mongoose.Types;
 
@@ -778,8 +783,8 @@ const getRecentActivity = async (req, res) => {
                 },
                 { _id: 0 },
             );
-            const dateTimestamp = new Date(exercise.completedTimestamp);
-            const now = new Date();
+            const dateTimestamp = dayjs(exercise.completedTimestamp).tz("America/Chicago").toDate();
+            const now = dayjs().tz("America/Chicago").toDate();
 
             // Strip times
             const today = new Date(
